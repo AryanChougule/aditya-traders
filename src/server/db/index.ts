@@ -35,8 +35,14 @@ async function connect(): Promise<DB> {
   const dir = process.env.PGLITE_DIR ?? ".data/pglite";
   if (!dir.startsWith("memory://")) (await import("node:fs")).mkdirSync(dir, { recursive: true });
   const client = new PGlite(dir);
+  // PGlite writes files directly; closing it on shutdown keeps them from being left half-written
+  for (const sig of ["SIGINT", "SIGTERM"] as const) process.once(sig, () => void client.close().finally(() => process.exit(0)));
   const db = drizzle({ client, schema });
-  await migrate(db, { migrationsFolder: "drizzle" });
+  try {
+    await migrate(db, { migrationsFolder: "drizzle" });
+  } catch (e) {
+    throw new Error(`The local development database in ${dir} could not be opened (it may have been damaged by a hard stop). Delete that folder and restart; it rebuilds itself with the starter catalog.`, { cause: e });
+  }
   await seed(db as unknown as DB);
   return db as unknown as DB;
 }
