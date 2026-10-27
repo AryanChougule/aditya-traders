@@ -1,26 +1,155 @@
 @import "tailwindcss";
 
+/* Tokens — see design-system/MASTER.md */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --bg: #f4f7f5;
+  --surface: #ffffff;
+  --surface-2: #eaf1ed;
+  --fg: #0f1a16;
+  --muted: #566259;
+  --border: #dde6e1;
+  --primary: #047857;
+  --primary-fg: #ffffff;
+  --primary-soft: #e3f3ec;
+  --primary-strong: #065f46;
+  --accent: #b45309;
+  --accent-soft: #fdf1d8;
+  --danger: #b91c1c;
+  --danger-soft: #fde8e8;
+  --info: #1d4ed8;
+  --info-soft: #e5edfd;
+  --scrim: rgb(8 15 12 / 0.5);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* product art tints */
+  --tint-green: #dff3e6;
+  --tint-green-ink: #1f7a45;
+  --tint-orange: #fde9d6;
+  --tint-orange-ink: #b4530f;
+  --tint-yellow: #fbf1cf;
+  --tint-yellow-ink: #8a6100;
+  --tint-blue: #e1ecfb;
+  --tint-blue-ink: #2557a7;
+  --tint-red: #fbe1df;
+  --tint-red-ink: #b42d22;
+  --tint-purple: #ece5f8;
+  --tint-purple-ink: #6b3fb3;
+  --tint-brown: #f1e7dc;
+  --tint-brown-ink: #7a4b23;
+  --tint-teal: #dbf1f0;
+  --tint-teal-ink: #17736e;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #0b1210;
+    --surface: #121b18;
+    --surface-2: #1a2622;
+    --fg: #e8eeeb;
+    --muted: #9aa8a2;
+    --border: #26352f;
+    --primary: #34d399;
+    --primary-fg: #04241a;
+    --primary-soft: #11302a;
+    --primary-strong: #6ee7b7;
+    --accent: #fbbf24;
+    --accent-soft: #3a2b0b;
+    --danger: #f87171;
+    --danger-soft: #3b1717;
+    --info: #93b4fb;
+    --info-soft: #172443;
+    --scrim: rgb(0 0 0 / 0.6);
+
+    --tint-green: #163024;
+    --tint-green-ink: #7fd8a2;
+    --tint-orange: #3a2512;
+    --tint-orange-ink: #f5ad6e;
+    --tint-yellow: #33290d;
+    --tint-yellow-ink: #f0cf6a;
+    --tint-blue: #16233b;
+    --tint-blue-ink: #92b6f3;
+    --tint-red: #3a1a18;
+    --tint-red-ink: #f39a90;
+    --tint-purple: #261d3a;
+    --tint-purple-ink: #c2a6f2;
+    --tint-brown: #2f2419;
+    --tint-brown-ink: #d9b48c;
+    --tint-teal: #12302e;
+    --tint-teal-ink: #7bd6cf;
+    color-scheme: dark;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-strong: var(--primary-strong);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-scrim: var(--scrim);
+
+  --font-sans: var(--font-body), var(--font-deva), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), var(--font-deva), ui-sans-serif, system-ui, sans-serif;
+
+  --animate-sheet-up: sheet-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 180ms ease-out;
+  --animate-pop: pop 200ms ease-out;
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop {
+  0% { transform: scale(0.9); }
+  60% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

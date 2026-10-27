@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# example env file is documentation, not secrets
+!.env.example
+
+# embedded development database
+/.data
