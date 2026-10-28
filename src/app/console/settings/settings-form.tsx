@@ -260,7 +260,7 @@ function AnnouncementCard({ value: a, onChange }: { value: Announcement; onChang
       <div role="radiogroup" aria-label="Style" className="flex flex-wrap gap-2">
         {(
           [
-            ["festival", "Festival wishes", "Deep red with marigolds and a diya"],
+            ["festival", "Festival wishes", "A festive banner: the Diwali scene, or deep red"],
             ["offer", "Offer", "Bold turmeric, big badge for the offer"],
           ] as const
         ).map(([k, label, hint]) => (
@@ -277,6 +277,31 @@ function AnnouncementCard({ value: a, onChange }: { value: Announcement; onChang
           </button>
         ))}
       </div>
+      {a.kind === "festival" ? (
+        <div role="radiogroup" aria-label="Artwork" className="grid gap-1.5">
+          <span className="text-sm font-semibold">Artwork</span>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["diwali", "Diwali scene", "Animated diyas, rangoli, akash kandil and fireworks, with शुभ दीपावली"],
+                ["simple", "Simple", "Just the colours, for any other festival"],
+              ] as const
+            ).map(([k, label, hint]) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={a.art === k}
+                onClick={() => set("art", k)}
+                className={`grid max-w-xs cursor-pointer rounded-xl px-4 py-2.5 text-left ring-1 transition-colors ${a.art === k ? "bg-primary-soft ring-2 ring-primary" : "ring-border hover:bg-surface-2"}`}
+              >
+                <span className="font-bold">{label}</span>
+                <span className="text-sm text-muted">{hint}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <Field id="an-title-en" label="Heading (English)" value={a.titleEn} maxLength={80} onChange={(e) => set("titleEn", e.target.value)} placeholder="Happy Diwali from Aditya Traders" />
         <Field id="an-title-mr" label="Heading (मराठी)" value={a.titleMr} maxLength={80} onChange={(e) => set("titleMr", e.target.value)} lang="mr" placeholder="दिवाळीच्या हार्दिक शुभेच्छा!" />

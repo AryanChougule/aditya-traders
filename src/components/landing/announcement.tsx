@@ -8,6 +8,7 @@ import { activeAnnouncement } from "@/lib/settings";
 import { istDateKey } from "@/lib/slots";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
+import { DiwaliHero, FaralSection } from "./diwali";
 
 /** A small oil lamp, drawn rather than an emoji so it themes and scales cleanly. */
 function Diya({ className }: { className?: string }) {
@@ -38,47 +39,66 @@ function Garland() {
   );
 }
 
-/**
- * The landing hero. Shows the owner's announcement (an offer or festival wishes) while it's switched on
- * and before its end date; otherwise a plain welcome. Both lead to the shop.
- */
-export function AnnouncementHero() {
+function useAnnouncement() {
   const s = useSettings();
-  const lang = useLang();
-  const t = useT();
   const now = useNow();
   // until the clock is known (first paint), trust the switch; the end date is applied right after
-  const a = now ? activeAnnouncement(s, istDateKey(now)) : s.announcement.enabled ? s.announcement : null;
+  return now ? activeAnnouncement(s, istDateKey(now)) : s.announcement.enabled ? s.announcement : null;
+}
 
-  if (!a)
-    return (
-      <section className="relative overflow-hidden rounded-3xl bg-primary px-5 py-10 text-primary-fg sm:px-10 sm:py-14">
-        <span className="absolute -right-10 -top-10 size-48 rounded-full bg-white/10" aria-hidden />
-        <div className="relative grid max-w-2xl gap-4">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full bg-black/15 px-3 py-1 text-sm font-bold">
-            <Store className="size-4" aria-hidden /> {s.name}
-          </span>
-          <h1 className="text-3xl font-bold leading-tight sm:text-5xl">{t("landing.heroTitle")}</h1>
-          <p className="text-lg opacity-90">{t("landing.heroBody", { store: s.name })}</p>
-          <OrderButtons variant="light" />
-        </div>
-      </section>
-    );
+/**
+ * The landing hero. Shows the owner's announcement (an offer or festival wishes) while it's switched on
+ * and before its end date; otherwise a plain welcome. All lead to the shop. The Diwali scene spans the
+ * screen; the other banners sit in the page column as cards.
+ */
+export function AnnouncementHero() {
+  const lang = useLang();
+  const a = useAnnouncement();
 
+  const ends = a?.endsOn
+    ? new Date(`${a.endsOn}T12:00:00+05:30`).toLocaleDateString(lang === "mr" ? "mr-IN-u-nu-latn" : "en-IN", { day: "numeric", month: "long", timeZone: "Asia/Kolkata" })
+    : null;
+
+  if (a?.kind === "festival" && a.art === "diwali") return <DiwaliHero title={pick(lang, a.titleEn, a.titleMr)} message={pick(lang, a.messageEn, a.messageMr)} ends={ends} />;
+
+  return <div className="mx-auto w-full max-w-6xl px-4 pt-5">{a ? <Banner a={a} ends={ends} /> : <Welcome />}</div>;
+}
+
+function Welcome() {
+  const s = useSettings();
+  const t = useT();
+  return (
+    <section className="relative overflow-hidden rounded-3xl bg-primary px-5 py-10 text-primary-fg sm:px-10 sm:py-14">
+      <span className="absolute -right-10 -top-10 size-48 rounded-full bg-white/10" aria-hidden />
+      <div className="relative grid max-w-2xl gap-4">
+        <span className="inline-flex w-fit items-center gap-2 rounded-full bg-black/15 px-3 py-1 text-sm font-bold">
+          <Store className="size-4" aria-hidden /> {s.name}
+        </span>
+        <h1 className="text-3xl font-bold leading-tight sm:text-5xl">{t("landing.heroTitle")}</h1>
+        <p className="text-lg opacity-90">{t("landing.heroBody", { store: s.name })}</p>
+        <OrderButtons variant="light" />
+      </div>
+    </section>
+  );
+}
+
+/** Shown under the Diwali scene only: the faral plates. */
+export function FestivalExtras() {
+  const a = useAnnouncement();
+  return a?.kind === "festival" && a.art === "diwali" ? <FaralSection /> : null;
+}
+
+function Banner({ a, ends }: { a: NonNullable<ReturnType<typeof useAnnouncement>>; ends: string | null }) {
+  const lang = useLang();
+  const t = useT();
   const festival = a.kind === "festival";
   const title = pick(lang, a.titleEn, a.titleMr);
   const message = pick(lang, a.messageEn, a.messageMr);
   const badge = pick(lang, a.badgeEn, a.badgeMr);
-  const ends = a.endsOn
-    ? new Date(`${a.endsOn}T12:00:00+05:30`).toLocaleDateString(lang === "mr" ? "mr-IN-u-nu-latn" : "en-IN", { day: "numeric", month: "long", timeZone: "Asia/Kolkata" })
-    : null;
 
   return (
     <section
-      className={cn(
-        "relative overflow-hidden rounded-3xl px-5 pb-10 pt-14 sm:px-10 sm:pb-14 sm:pt-16",
-        festival ? "bg-festive text-festive-fg" : "bg-offer text-offer-fg",
-      )}
+      className={cn("relative overflow-hidden rounded-3xl px-5 pb-10 pt-14 sm:px-10 sm:pb-14 sm:pt-16", festival ? "bg-festive text-festive-fg" : "bg-offer text-offer-fg")}
       aria-label={title}
     >
       {festival ? <Garland /> : null}
@@ -107,13 +127,17 @@ export function AnnouncementHero() {
   );
 }
 
-export function OrderButtons({ variant }: { variant: "light" | "festive" | "primary" }) {
+export function OrderButtons({ variant, className }: { variant: "light" | "festive" | "primary"; className?: string }) {
   const t = useT();
   const main =
-    variant === "festive" ? "bg-marigold text-[#3b0d14] hover:brightness-105" : variant === "light" ? "bg-white text-fg hover:bg-white/90 dark:text-[#04241a]" : "bg-primary text-primary-fg hover:bg-primary-strong";
+    variant === "festive"
+      ? "bg-marigold text-[#3b0d14] hover:brightness-105"
+      : variant === "light"
+        ? "bg-white text-fg hover:bg-white/90 dark:text-[#04241a]"
+        : "bg-primary text-primary-fg hover:bg-primary-strong";
   const ghost = variant === "primary" ? "text-primary hover:bg-primary-soft" : "text-current ring-1 ring-current/40 hover:bg-white/10";
   return (
-    <div className="flex flex-wrap gap-2.5 pt-1">
+    <div className={cn("flex flex-wrap gap-2.5 pt-1", className)}>
       <Link href="/shop" className={cn("inline-flex h-13 items-center gap-2 rounded-xl px-6 text-lg font-bold transition-transform active:scale-[0.97]", main)}>
         {t("landing.orderNow")} <ArrowRight className="size-5" aria-hidden />
       </Link>

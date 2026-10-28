@@ -36,6 +36,8 @@ export const settingsSchema = z.object({
   announcement: z.object({
     enabled: z.boolean(),
     kind: z.enum(["offer", "festival"]),
+    /** festival artwork: the animated Diwali scene, or just the colours (for other festivals) */
+    art: z.enum(["diwali", "simple"]).default("diwali"),
     titleEn: z.string().max(80),
     titleMr: z.string().max(80),
     messageEn: z.string().max(240),
@@ -82,6 +84,7 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   announcement: {
     enabled: true,
     kind: "festival",
+    art: "diwali",
     titleEn: "Happy Diwali from Aditya Traders",
     titleMr: "आदित्य ट्रेडर्सकडून दिवाळीच्या हार्दिक शुभेच्छा!",
     messageEn: "Get your faral ingredients, oil, ghee and puja essentials from your neighbourhood store, delivered to your door or ready at the counter.",

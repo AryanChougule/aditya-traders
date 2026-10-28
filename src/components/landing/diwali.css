@@ -1,0 +1,254 @@
+/* The Diwali landing scene. Only transforms and opacity animate, so phones composite it without repainting. */
+
+.dw-sky {
+  background:
+    radial-gradient(ellipse 90% 45% at 50% 108%, rgb(255 138 61 / 0.55) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 38%, rgb(124 29 44 / 0.45) 0%, transparent 70%),
+    linear-gradient(180deg, #080726 0%, #1c0f45 38%, #4a1338 72%, #7c1d2c 100%);
+}
+
+/* stars */
+.dw-star {
+  position: absolute;
+  border-radius: 9999px;
+  background: #fff8e1;
+  box-shadow: 0 0 4px 1px rgb(255 248 225 / 0.6);
+  animation: dw-twinkle 3s ease-in-out infinite;
+}
+@keyframes dw-twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* fireworks: a rocket climbs, flashes, then two rings of sparks fall away under "gravity" */
+.dw-show, .dw-tap { position: absolute; width: 0; height: 0; }
+.dw-rocket {
+  position: absolute;
+  left: -1px;
+  width: 2px;
+  height: 34px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, #fff3c4, transparent);
+  opacity: 0;
+  animation: dw-rocket 7.2s ease-out var(--delay, 0s) infinite;
+}
+@keyframes dw-rocket {
+  0% { transform: translateY(240px); opacity: 0; }
+  3% { opacity: 1; }
+  17% { transform: translateY(0); opacity: 1; }
+  19%, 100% { transform: translateY(0); opacity: 0; }
+}
+.dw-flash {
+  position: absolute;
+  left: -30px;
+  top: -30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fff 0%, var(--c) 30%, transparent 70%);
+  opacity: 0;
+  animation: dw-flash 7.2s ease-out var(--delay, 0s) infinite;
+}
+@keyframes dw-flash {
+  0%, 17% { opacity: 0; transform: scale(0.2); }
+  19% { opacity: 0.9; transform: scale(1); }
+  30%, 100% { opacity: 0; transform: scale(1.6); }
+}
+.dw-spark {
+  position: absolute;
+  left: -2.5px;
+  top: -2.5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--c2, var(--c));
+  box-shadow: 0 0 6px 2px var(--c2, var(--c));
+  opacity: 0;
+  --tx: calc(var(--ux) * var(--d));
+  --ty: calc(var(--uy) * var(--d));
+  animation: dw-spark 7.2s cubic-bezier(0.15, 0.7, 0.3, 1) var(--delay, 0s) infinite;
+}
+@keyframes dw-spark {
+  0%, 18% { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  20% { opacity: 1; transform: translate(0, 0) scale(1.1); }
+  42% { opacity: 1; transform: translate(var(--tx), var(--ty)) scale(0.9); }
+  60% { opacity: 0; transform: translate(var(--tx), calc(var(--ty) + 30px)) scale(0.3); }
+  100% { opacity: 0; transform: translate(var(--tx), calc(var(--ty) + 30px)) scale(0.3); }
+}
+/* a burst you lit yourself: the same sparks, once, straight away */
+.dw-tap .dw-flash { animation: dw-flash-once 0.9s ease-out both; }
+.dw-tap .dw-spark { animation: dw-spark-once 1.4s cubic-bezier(0.15, 0.7, 0.3, 1) both; }
+@keyframes dw-flash-once {
+  0% { opacity: 0.95; transform: scale(0.4); }
+  100% { opacity: 0; transform: scale(1.8); }
+}
+@keyframes dw-spark-once {
+  0% { opacity: 1; transform: translate(0, 0) scale(1.1); }
+  55% { opacity: 1; transform: translate(var(--tx), var(--ty)) scale(0.9); }
+  100% { opacity: 0; transform: translate(var(--tx), calc(var(--ty) + 34px)) scale(0.3); }
+}
+
+/* embers drifting up from the diyas */
+.dw-ember {
+  position: absolute;
+  bottom: 60px;
+  border-radius: 9999px;
+  background: #ffcf5a;
+  box-shadow: 0 0 6px 2px rgb(255 160 60 / 0.7);
+  opacity: 0;
+  animation: dw-ember 9s linear infinite;
+}
+@keyframes dw-ember {
+  0% { opacity: 0; transform: translate(0, 0); }
+  10% { opacity: 0.9; }
+  80% { opacity: 0.5; }
+  100% { opacity: 0; transform: translate(var(--dx), -380px); }
+}
+
+/* toran and kandils sway on their strings */
+.dw-sway {
+  transform-box: view-box;
+  transform-origin: 40px 12px;
+  animation: dw-sway 4.2s ease-in-out infinite;
+}
+@keyframes dw-sway {
+  0%, 100% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+}
+.dw-swing {
+  transform-origin: 50% 0;
+  animation: dw-swing 5.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 14px rgb(255 154 60 / 0.55));
+}
+@keyframes dw-swing {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+.dw-kglow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dw-pulse 2.6s ease-in-out infinite;
+}
+.dw-tail {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: dw-tail 2.2s ease-in-out infinite;
+}
+@keyframes dw-tail {
+  0%, 100% { transform: skewX(-6deg); }
+  50% { transform: skewX(7deg); }
+}
+@keyframes dw-pulse {
+  0%, 100% { opacity: 0.75; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+/* rangoli: petals are drawn as strokes, then filled with colour, then the whole thing turns slowly */
+.dw-rangoli { opacity: 0.4; }
+.dw-spin {
+  /* the group is symmetric about 0,0, so its own box's centre is the rangoli's centre */
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dw-spin 120s linear infinite;
+}
+@keyframes dw-spin { to { transform: rotate(360deg); } }
+.dw-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  fill-opacity: 0;
+  animation: dw-draw 1.6s ease-out forwards, dw-fillin 1s ease forwards;
+}
+@keyframes dw-draw { to { stroke-dashoffset: 0; } }
+@keyframes dw-fillin { to { fill-opacity: 1; } }
+.dw-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dw-dot 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+@keyframes dw-dot { from { transform: scale(0); opacity: 0; } }
+
+/* the greeting */
+.dw-title {
+  font-size: clamp(4.4rem, 22vw, 9rem);
+  filter: drop-shadow(0 0 22px rgb(255 170 60 / 0.55)) drop-shadow(0 4px 2px rgb(60 10 20 / 0.6));
+}
+.dw-word {
+  display: block;
+  background: linear-gradient(100deg, #f6a609 0%, #ffd76a 25%, #fffbe8 45%, #ffd76a 60%, #f6a609 80%, #ffd76a 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding: 0.08em 0.1em 0;
+  animation:
+    dw-word-in 1.1s cubic-bezier(0.2, 0.9, 0.3, 1.2) both calc(0.5s + var(--i) * 0.45s),
+    dw-shimmer 5s linear infinite 2s;
+}
+.dw-shubh { font-size: 0.55em; }
+@keyframes dw-word-in {
+  from { opacity: 0; transform: translateY(0.4em) scale(0.85); filter: blur(10px); }
+}
+@keyframes dw-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -120% 0; }
+}
+.dw-rise { animation: dw-rise 0.8s ease-out both calc(1.3s + var(--i) * 0.18s); }
+@keyframes dw-rise { from { opacity: 0; transform: translateY(14px); } }
+.dw-hint {
+  animation: dw-rise 0.8s ease-out both 3.2s, dw-breathe 2.4s ease-in-out infinite 4s;
+}
+.dw-hint[data-gone] { animation: none; opacity: 0; }
+@keyframes dw-breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* diyas light one after another, then flicker; a warm pool of light sits under them */
+.dw-pool { background: radial-gradient(ellipse 60% 100% at 50% 100%, rgb(255 160 60 / 0.4), transparent 75%); }
+.dw-flame {
+  transform-box: view-box;
+  transform-origin: 60px 56px;
+  animation:
+    dw-ignite 0.6s cubic-bezier(0.3, 1.6, 0.5, 1) both calc(1.6s + var(--i) * 0.28s),
+    dw-flicker 1.7s ease-in-out infinite calc(2.3s + var(--i) * 0.28s);
+}
+.dw-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    dw-glow-in 0.8s ease-out both calc(1.6s + var(--i) * 0.28s),
+    dw-pulse 2.2s ease-in-out infinite calc(2.4s + var(--i) * 0.28s);
+}
+@keyframes dw-ignite { from { transform: scale(0); opacity: 0; } }
+@keyframes dw-glow-in { from { opacity: 0; transform: scale(0.3); } }
+@keyframes dw-flicker {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  20% { transform: scale(0.95, 1.07) skewX(2.5deg); }
+  45% { transform: scale(1.04, 0.95) skewX(-2deg); }
+  70% { transform: scale(0.97, 1.05) skewX(1.5deg); }
+}
+
+/* the six days scroll by like a festival banner */
+.dw-marquee { animation: dw-marquee 28s linear infinite; }
+@keyframes dw-marquee { to { transform: translateX(-50%); } }
+
+/* faral plates turn gently on hover (desktop) */
+.dw-plate { will-change: transform; }
+
+/* off-screen: stop drawing */
+.dw[data-paused] *,
+.dw[data-paused] *::before {
+  animation-play-state: paused !important;
+}
+
+/* reduced motion: the finished scene, lamps lit, nothing moving */
+@media (prefers-reduced-motion: reduce) {
+  .dw *,
+  .dw *::before {
+    animation: none !important;
+  }
+  .dw-draw { stroke-dashoffset: 0; fill-opacity: 1; }
+  .dw-hint { display: none; }
+  .dw-marquee { flex-wrap: wrap; width: auto; justify-content: center; }
+  .dw-marquee > [aria-hidden] { display: none; }
+}

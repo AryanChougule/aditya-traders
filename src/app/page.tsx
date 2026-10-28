@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bike, Clock, MapPin, Scale, Store } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { LangSwitch, T } from "@/components/i18n";
-import { AnnouncementHero, OrderButtons } from "@/components/landing/announcement";
+import { AnnouncementHero, FestivalExtras, OrderButtons } from "@/components/landing/announcement";
 import { HowItWorks } from "@/components/shop/buy-again";
 import { CategoryTile } from "@/components/shop/category-tile";
 import { StoreStatus } from "@/components/shop/chrome";
@@ -33,11 +33,11 @@ export default async function LandingPage() {
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-10 px-4 pb-16 pt-5">
-        <div className="grid gap-3">
-          <AnnouncementHero />
-          <StoreStatus className="justify-self-start" />
-        </div>
+      <AnnouncementHero />
+
+      <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-1 gap-10 px-4 pb-16 pt-4">
+        <StoreStatus className="justify-self-start" />
+        <FestivalExtras />
 
         <section aria-labelledby="why" className="grid gap-4">
           <h2 id="why" className="text-xl font-semibold sm:text-2xl">
