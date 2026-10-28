@@ -1,3 +1,5 @@
+import { T } from "@/components/i18n";
+import type { Key } from "@/lib/i18n";
 import { Icon } from "./icon";
 import { PAYMENT_META, STATUS_META } from "@/lib/order-flow";
 import type { OrderStatus, PaymentStatus } from "@/lib/types";
@@ -27,7 +29,7 @@ export function StatusPill({ status, audience = "store", className }: { status: 
   const m = STATUS_META[status];
   return (
     <Pill tone={m.tone} icon={m.icon} className={className}>
-      {audience === "store" ? m.label : m.shopper}
+      {audience === "store" ? m.label : <T k={`status.${status}` as Key} />}
     </Pill>
   );
 }

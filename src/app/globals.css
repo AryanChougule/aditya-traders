@@ -20,6 +20,14 @@
   --info-soft: #e5edfd;
   --scrim: rgb(8 15 12 / 0.5);
 
+  /* landing announcement: festival (deep kumkum red + marigold) and offer (turmeric) */
+  --festive: #7c1d2c;
+  --festive-fg: #fff6e5;
+  --festive-soft: #fbe9d4;
+  --marigold: #f6a609;
+  --offer: #b45309;
+  --offer-fg: #ffffff;
+
   /* product art tints */
   --tint-green: #dff3e6;
   --tint-green-ink: #1f7a45;
@@ -58,6 +66,12 @@
     --info: #93b4fb;
     --info-soft: #172443;
     --scrim: rgb(0 0 0 / 0.6);
+    --festive: #4a1019;
+    --festive-fg: #ffeccc;
+    --festive-soft: #2c1a12;
+    --marigold: #fbbf24;
+    --offer: #92400e;
+    --offer-fg: #fff7ed;
 
     --tint-green: #163024;
     --tint-green-ink: #7fd8a2;
@@ -97,6 +111,12 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
   --color-scrim: var(--scrim);
+  --color-festive: var(--festive);
+  --color-festive-fg: var(--festive-fg);
+  --color-festive-soft: var(--festive-soft);
+  --color-marigold: var(--marigold);
+  --color-offer: var(--offer);
+  --color-offer-fg: var(--offer-fg);
 
   --font-sans: var(--font-body), var(--font-deva), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-heading), var(--font-deva), ui-sans-serif, system-ui, sans-serif;

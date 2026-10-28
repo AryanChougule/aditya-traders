@@ -1,14 +1,17 @@
+import { T } from "@/components/i18n";
 import { rupees } from "@/lib/money";
 import type { Paise } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export type BillRow = { label: React.ReactNode; value: Paise | string; tone?: "save" | "muted" | "strong"; strike?: Paise };
+export type BillRow = { label: React.ReactNode; value: Paise | React.ReactNode; tone?: "save" | "muted" | "strong"; strike?: Paise };
 
 /** Itemised bill used by the cart, checkout, order and invoice views so every total reads the same way. */
-export function Bill({ rows, total, totalLabel, note, className }: { rows: BillRow[]; total: Paise; totalLabel: string; note?: React.ReactNode; className?: string }) {
+export function Bill({ rows, total, totalLabel, note, className }: { rows: BillRow[]; total: Paise; totalLabel: React.ReactNode; note?: React.ReactNode; className?: string }) {
   return (
     <div className={cn("rounded-2xl bg-surface p-4 ring-1 ring-border", className)}>
-      <h2 className="mb-2 text-base font-semibold">Bill details</h2>
+      <h2 className="mb-2 text-base font-semibold">
+        <T k="bill.title" />
+      </h2>
       <dl className="grid gap-1.5 text-[15px]">
         {rows.map((r, i) => (
           <div key={i} className="flex items-baseline justify-between gap-3">

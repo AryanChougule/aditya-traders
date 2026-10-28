@@ -7,6 +7,7 @@ import { History, MessageSquareText, Search, TrendingUp, X } from "lucide-react"
 import { CategoryTile } from "@/components/shop/category-tile";
 import { ProductGrid } from "@/components/shop/product-card";
 import { searchAction } from "@/app/actions";
+import { useT } from "@/components/i18n";
 import { useSettings } from "@/components/providers";
 import { useCart, useHydrated } from "@/lib/cart-store";
 import { TRENDING } from "@/lib/search";
@@ -19,6 +20,7 @@ export function SearchView({ initialQuery, categories }: { initialQuery: string;
   const [debounced, setDebounced] = useState(initialQuery);
   const inputRef = useRef<HTMLInputElement>(null);
   const settings = useSettings();
+  const t = useT();
   const recent = useCart((s) => s.recentSearches);
   const remember = useCart((s) => s.rememberSearch);
   const clearRecent = useCart((s) => s.clearRecentSearches);
@@ -70,7 +72,7 @@ export function SearchView({ initialQuery, categories }: { initialQuery: string;
         className="w-full"
       >
         <label htmlFor="search-input" className="sr-only">
-          Search products
+          {t("search.label")}
         </label>
         <div className="flex h-13 items-center gap-2 rounded-2xl bg-surface px-4 ring-2 ring-primary/70 focus-within:ring-primary">
           <Search className="size-5 shrink-0 text-muted" aria-hidden />
@@ -83,11 +85,11 @@ export function SearchView({ initialQuery, categories }: { initialQuery: string;
             autoFocus
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Try “aata”, “dahi”, “biscut”"
+            placeholder={t("search.tryPlaceholder")}
             className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted/70 [&::-webkit-search-cancel-button]:hidden"
           />
           {q ? (
-            <button type="button" onClick={() => run("")} aria-label="Clear search" className="-mr-2 grid size-11 cursor-pointer place-items-center rounded-full text-muted hover:bg-surface-2">
+            <button type="button" onClick={() => run("")} aria-label={t("search.clear")} className="-mr-2 grid size-11 cursor-pointer place-items-center rounded-full text-muted hover:bg-surface-2">
               <X className="size-5" />
             </button>
           ) : null}
@@ -100,10 +102,10 @@ export function SearchView({ initialQuery, categories }: { initialQuery: string;
             <section aria-label="Recent searches">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-base font-semibold">
-                  <History className="size-4 text-muted" aria-hidden /> Recent
+                  <History className="size-4 text-muted" aria-hidden /> {t("search.recent")}
                 </h2>
                 <button onClick={clearRecent} className="h-11 cursor-pointer rounded-lg px-2 text-sm font-semibold text-muted hover:text-fg">
-                  Clear
+                  {t("search.clearRecent")}
                 </button>
               </div>
               <Chips items={recent} onPick={run} />
@@ -111,12 +113,12 @@ export function SearchView({ initialQuery, categories }: { initialQuery: string;
           ) : null}
           <section aria-label="Popular searches">
             <h2 className="mb-2 flex items-center gap-2 text-base font-semibold">
-              <TrendingUp className="size-4 text-muted" aria-hidden /> Popular in your area
+              <TrendingUp className="size-4 text-muted" aria-hidden /> {t("search.popular")}
             </h2>
             <Chips items={TRENDING} onPick={run} />
           </section>
           <section aria-label="Categories">
-            <h2 className="mb-2 text-base font-semibold">Browse categories</h2>
+            <h2 className="mb-2 text-base font-semibold">{t("search.browse")}</h2>
             <div className="grid grid-cols-4 gap-x-1.5 gap-y-3 sm:grid-cols-5 lg:grid-cols-10">
               {categories.map((c) => (
                 <CategoryTile key={c.id} c={c} />
@@ -125,11 +127,13 @@ export function SearchView({ initialQuery, categories }: { initialQuery: string;
           </section>
         </>
       ) : searched !== debounced.trim() ? (
-        <p className="text-sm text-muted" aria-live="polite">Searching…</p>
+        <p className="text-sm text-muted" aria-live="polite">
+          {t("search.searching")}
+        </p>
       ) : results.length ? (
         <section aria-label="Results" className="grid gap-3">
           <p className="text-sm text-muted" aria-live="polite">
-            {results.length} result{results.length > 1 ? "s" : ""} for <b className="text-fg">“{debounced.trim()}”</b>
+            {t(results.length > 1 ? "search.resultsMany" : "search.resultsOne", { n: results.length })} <b className="text-fg">“{debounced.trim()}”</b>
           </p>
           <ProductGrid products={results} />
         </section>
@@ -138,17 +142,16 @@ export function SearchView({ initialQuery, categories }: { initialQuery: string;
           <span className="grid size-14 place-items-center rounded-2xl bg-surface-2 text-muted">
             <MessageSquareText className="size-7" aria-hidden />
           </span>
-          <h2 className="text-lg font-semibold">We don't have “{debounced.trim()}” online yet</h2>
+          <h2 className="text-lg font-semibold">{t("search.noneTitle", { q: debounced.trim() })}</h2>
           <p className="max-w-sm text-sm text-muted">
-            We've noted it for the store. It may be on the shelf. Call <span className="select-all font-semibold text-fg">{settings.phone}</span> and
-            we'll add it to your order.
+            {t("search.noneBody")} <span className="select-all font-semibold text-fg">{settings.phone}</span>
           </p>
           <div className="mt-1">
-            <p className="mb-2 text-sm font-semibold">Try instead</p>
+            <p className="mb-2 text-sm font-semibold">{t("search.tryInstead")}</p>
             <Chips items={TRENDING.slice(0, 5)} onPick={run} />
           </div>
           <Link href="/categories" className="mt-1 inline-flex h-11 items-center rounded-xl px-4 font-bold text-primary hover:bg-primary-soft">
-            Browse all categories
+            {t("search.browseAll")}
           </Link>
         </section>
       )}

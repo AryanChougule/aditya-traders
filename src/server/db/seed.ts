@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { CATEGORIES, PRODUCTS } from "@/lib/catalog";
 import { DEFAULT_SETTINGS } from "@/lib/settings";
 import type { DB } from "./index";
@@ -13,7 +13,14 @@ export async function seed(db: DB) {
   await db.insert(schema.counters).values({ key: "order", value: 1000 }).onConflictDoNothing();
 
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.categories);
-  if (count > 0) return;
+  if (count > 0) {
+    // databases created before Marathi names existed: fill blanks only, never overwrite the owner's edits
+    for (const c of CATEGORIES)
+      await db.update(schema.categories).set({ nameMr: c.nameMr }).where(and(eq(schema.categories.id, c.id), eq(schema.categories.nameMr, "")));
+    for (const p of PRODUCTS)
+      if (p.nameMr) await db.update(schema.products).set({ nameMr: p.nameMr }).where(and(eq(schema.products.id, p.id), eq(schema.products.nameMr, "")));
+    return;
+  }
 
   await db.insert(schema.categories).values(CATEGORIES.map((c, i) => ({ ...c, sort: i })));
   await db.insert(schema.products).values(
@@ -22,6 +29,7 @@ export async function seed(db: DB) {
       slug: p.slug,
       name: p.name,
       nameHi: p.nameHi,
+      nameMr: p.nameMr,
       brand: p.brand ?? null,
       categoryId: p.categoryId,
       unitType: p.unitType,

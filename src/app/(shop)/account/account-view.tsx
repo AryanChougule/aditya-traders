@@ -6,18 +6,20 @@ import { useState } from "react";
 import { Bike, ChevronRight, LogOut, MapPin, Phone, RefreshCcw, ShieldCheck, Store, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { deleteAccountAction, deleteAddressAction, setDefaultAddressAction, updateProfileAction } from "@/app/actions";
+import { useLang, useT } from "@/components/i18n";
 import { useSettings } from "@/components/providers";
 import { PhoneLogin } from "@/components/shop/phone-login";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { rupees } from "@/lib/money";
+import { hourLabel, type Key } from "@/lib/i18n";
 import type { Address, LedgerEntry, SubPref } from "@/lib/types";
 import { cn, dayLabel } from "@/lib/utils";
 
-const PREFS: { key: SubPref; label: string; icon: React.ReactNode }[] = [
-  { key: "similar", label: "Replace with similar", icon: <RefreshCcw className="size-4" /> },
-  { key: "ask", label: "Ask me first", icon: <Phone className="size-4" /> },
-  { key: "remove", label: "Remove it", icon: <Trash2 className="size-4" /> },
+const PREFS: { key: SubPref; label: Key; icon: React.ReactNode }[] = [
+  { key: "similar", label: "sub.similar", icon: <RefreshCcw className="size-4" /> },
+  { key: "ask", label: "sub.ask", icon: <Phone className="size-4" /> },
+  { key: "remove", label: "sub.remove", icon: <Trash2 className="size-4" /> },
 ];
 
 type User = { name: string; phone: string; role: string; subPref: SubPref };
@@ -35,6 +37,8 @@ export function AccountView({
 }) {
   const router = useRouter();
   const s = useSettings();
+  const t = useT();
+  const lang = useLang();
   const [deleting, setDeleting] = useState(false);
 
   const act = async (p: Promise<{ ok: boolean; error?: string }>, done?: string) => {
@@ -50,7 +54,7 @@ export function AccountView({
 
   return (
     <div className="mx-auto grid max-w-2xl gap-4">
-      <h1 className="text-2xl font-semibold">Account</h1>
+      <h1 className="text-2xl font-semibold">{t("nav.account")}</h1>
 
       {user ? (
         <section className="flex items-center gap-3 rounded-2xl bg-surface p-4 ring-1 ring-border">
@@ -58,16 +62,16 @@ export function AccountView({
             {(user.name || "?").slice(0, 1).toUpperCase()}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="font-semibold">{user.name || "Add your name at checkout"}</p>
+            <p className="font-semibold">{user.name || t("account.noName")}</p>
             <p className="text-sm text-muted tabular">{user.phone}</p>
           </div>
           <Button variant="ghost" size="sm" onClick={logout}>
-            <LogOut className="size-4" aria-hidden /> Log out
+            <LogOut className="size-4" aria-hidden /> {t("account.logout")}
           </Button>
         </section>
       ) : (
         <section className="rounded-2xl bg-surface p-5 ring-1 ring-border">
-          <p className="mb-4 text-muted">Log in to save addresses, track orders and use your wallet.</p>
+          <p className="mb-4 text-muted">{t("account.loginPrompt")}</p>
           <PhoneLogin />
         </section>
       )}
@@ -80,8 +84,8 @@ export function AccountView({
                 <Wallet className="size-5" aria-hidden />
               </span>
               <div className="flex-1">
-                <h2 id="wallet-h" className="text-base font-semibold">Store wallet</h2>
-                <p className="text-sm text-muted">Weight differences and refunds land here. Used automatically at checkout.</p>
+                <h2 id="wallet-h" className="text-base font-semibold">{t("account.wallet")}</h2>
+                <p className="text-sm text-muted">{t("account.walletBody")}</p>
               </div>
               <p className="font-display text-xl font-semibold tabular">{rupees(wallet)}</p>
             </div>
@@ -106,38 +110,38 @@ export function AccountView({
           </section>
 
           <section id="addresses" aria-labelledby="addr-h" className="scroll-mt-32 rounded-2xl bg-surface p-4 ring-1 ring-border">
-            <h2 id="addr-h" className="mb-2 text-base font-semibold">Saved addresses</h2>
+            <h2 id="addr-h" className="mb-2 text-base font-semibold">{t("addr.saved")}</h2>
             {addresses.length ? (
               <ul className="grid gap-1">
                 {addresses.map((a) => (
                   <li key={a.id} className="flex flex-wrap items-start gap-3 rounded-xl p-2">
                     <MapPin className="mt-0.5 size-5 shrink-0 text-muted" aria-hidden />
                     <span className="min-w-0 flex-1 text-sm">
-                      <b>{a.label}</b>
-                      {a.isDefault ? <span className="ml-2 rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-bold text-primary">Default</span> : null}
+                      <b>{t(`addr.${a.label}` as Key)}</b>
+                      {a.isDefault ? <span className="ml-2 rounded-md bg-primary-soft px-1.5 py-0.5 text-xs font-bold text-primary">{t("account.default")}</span> : null}
                       <span className="block text-muted">
                         {a.line1}, {a.area}, {a.pincode}
                       </span>
                     </span>
                     {!a.isDefault ? (
                       <Button variant="ghost" size="sm" onClick={() => act(setDefaultAddressAction(a.id))}>
-                        Make default
+                        {t("account.makeDefault")}
                       </Button>
                     ) : null}
-                    <Button variant="ghost" size="sm" className="text-danger" onClick={() => act(deleteAddressAction(a.id), "Address removed")} aria-label={`Remove ${a.label} address`}>
+                    <Button variant="ghost" size="sm" className="text-danger" onClick={() => act(deleteAddressAction(a.id), t("account.addressRemoved"))} aria-label={t("account.removeAddress")}>
                       <Trash2 className="size-4" aria-hidden />
                     </Button>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted">You'll add an address at checkout.</p>
+              <p className="text-sm text-muted">{t("account.noAddress")}</p>
             )}
           </section>
 
           <section aria-labelledby="pref-h" className="rounded-2xl bg-surface p-4 ring-1 ring-border">
-            <h2 id="pref-h" className="text-base font-semibold">If an item is out of stock</h2>
-            <p className="mb-3 text-sm text-muted">Your default. You can change it on each order.</p>
+            <h2 id="pref-h" className="text-base font-semibold">{t("sub.title")}</h2>
+            <p className="mb-3 text-sm text-muted">{t("account.prefBody")}</p>
             <div role="radiogroup" aria-labelledby="pref-h" className="flex flex-wrap gap-2">
               {PREFS.map((p) => (
                 <button
@@ -151,7 +155,7 @@ export function AccountView({
                   )}
                 >
                   {p.icon}
-                  {p.label}
+                  {t(p.label)}
                 </button>
               ))}
             </div>
@@ -160,13 +164,13 @@ export function AccountView({
       ) : null}
 
       <section aria-label="Store" className="divide-y divide-border rounded-2xl bg-surface ring-1 ring-border">
-        <Row icon={<Store className="size-5" />} title={s.name} sub={`${s.address} · open ${s.opensAt % 12 || 12} ${s.opensAt < 12 ? "am" : "pm"} – ${s.closesAt % 12 || 12} ${s.closesAt < 12 ? "am" : "pm"}`} />
-        <Row icon={<Phone className="size-5" />} title="Call the store" sub={s.phone} selectable />
-        <Row icon={<Bike className="size-5" />} title="Delivery" sub={`Free above ${rupees(s.freeDeliveryAt)} · minimum order ${rupees(s.minOrder)}`} />
+        <Row icon={<Store className="size-5" />} title={s.name} sub={`${s.address} · ${t("account.hours", { open: hourLabel(lang, s.opensAt), close: hourLabel(lang, s.closesAt) })}`} />
+        <Row icon={<Phone className="size-5" />} title={t("footer.call")} sub={s.phone} selectable />
+        <Row icon={<Bike className="size-5" />} title={t("footer.delivery")} sub={t("footer.terms", { free: rupees(s.freeDeliveryAt), min: rupees(s.minOrder) })} />
         <div className="flex gap-3 p-4">
           <ShieldCheck className="mt-0.5 size-5 shrink-0 text-muted" aria-hidden />
           <div className="text-sm">
-            <p className="font-semibold">Policies</p>
+            <p className="font-semibold">{t("footer.policies")}</p>
             <p className="flex flex-wrap gap-x-3 text-muted">
               <Link href="/legal/terms" className="underline-offset-2 hover:underline">Terms</Link>
               <Link href="/legal/privacy" className="underline-offset-2 hover:underline">Privacy</Link>
@@ -179,7 +183,7 @@ export function AccountView({
 
       {staff ? (
         <section aria-label="Staff" className="rounded-2xl bg-surface ring-1 ring-border">
-          <p className="px-4 pt-3 text-xs font-bold uppercase tracking-wide text-muted">For {s.name} staff</p>
+          <p className="px-4 pt-3 text-xs font-bold uppercase tracking-wide text-muted">{t("footer.staff")}</p>
           {user.role !== "rider" ? (
             <Link href="/console" className="flex h-14 items-center justify-between px-4 font-semibold hover:bg-surface-2">
               Store console <ChevronRight className="size-5 text-muted" aria-hidden />
@@ -193,35 +197,35 @@ export function AccountView({
 
       {user && user.role === "customer" ? (
         <button onClick={() => setDeleting(true)} className="h-11 cursor-pointer justify-self-start rounded-lg text-sm font-semibold text-muted underline-offset-2 hover:text-danger hover:underline">
-          Delete my account
+          {t("account.delete")}
         </button>
       ) : null}
 
       <Sheet
         open={deleting}
         onOpenChange={setDeleting}
-        title="Delete your account?"
-        description="We'll remove your name, phone number and addresses, and log you out. Past invoices are kept without your details, as tax law requires. Any wallet balance is lost."
+        title={t("account.deleteTitle")}
+        description={t("account.deleteBody")}
         footer={
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={() => setDeleting(false)}>
-              Keep account
+              {t("account.keep")}
             </Button>
             <Button
               variant="danger"
               onClick={async () => {
                 const r = await deleteAccountAction();
                 if (!r.ok) return toast.error(r.error);
-                toast("Your account has been deleted");
-                router.push("/");
+                toast(t("account.deleted"));
+                router.push("/shop");
               }}
             >
-              Delete account
+              {t("account.deleteConfirm")}
             </Button>
           </div>
         }
       >
-        {wallet > 0 ? <p className="text-sm font-semibold text-danger">You have {rupees(wallet)} in your wallet. Use it on an order first, or call the store.</p> : null}
+        {wallet > 0 ? <p className="text-sm font-semibold text-danger">{t("account.walletWarning", { amount: rupees(wallet) })}</p> : null}
       </Sheet>
     </div>
   );

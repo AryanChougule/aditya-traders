@@ -5,6 +5,7 @@ import { RepeatOrderButton } from "./repeat-order-button";
 import { getCurrentUser } from "@/server/auth";
 import { getCatalog } from "@/server/catalog";
 import { listCustomerOrders } from "@/server/orders";
+import { T } from "@/components/i18n";
 import { dayLabel } from "@/lib/utils";
 
 /** The retention feature that matters most for groceries: your usual items, one tap away. */
@@ -30,16 +31,18 @@ export async function BuyAgain() {
           <History className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-display font-semibold">Your last order, {dayLabel(last.createdAt)}</p>
+          <p className="font-display font-semibold">
+            <T k="buyAgain.lastOrder" v={{ date: dayLabel(last.createdAt) }} />
+          </p>
           <p className="text-sm text-muted">
-            {last.items.filter((i) => !i.substituteFor).length} items · {last.number}
+            <T k="common.items" v={{ n: last.items.filter((i) => !i.substituteFor).length }} /> · {last.number}
           </p>
         </div>
-        <RepeatOrderButton orderId={last.id} label="Repeat this order" />
+        <RepeatOrderButton orderId={last.id} repeatLast />
       </div>
       {products.length ? (
         <>
-          <SectionHeader title="Buy again" sub="Items you order most" />
+          <SectionHeader title={<T k="buyAgain.title" />} sub={<T k="buyAgain.sub" />} />
           <div className="no-scrollbar -mx-4 flex snap-x gap-2.5 overflow-x-auto scroll-px-4 px-4 pb-1">
             {products.slice(0, 12).map((p) => (
               <ProductCard key={p.id} product={p} className="w-[44vw] max-w-[180px] shrink-0 snap-start sm:w-[180px]" />
@@ -53,10 +56,10 @@ export async function BuyAgain() {
 
 export function HowItWorks() {
   const steps = [
-    ["Order on your phone", "Pick a delivery slot, or collect it from the counter."],
-    ["We pack and weigh", "Loose items are weighed fresh. You pay for the exact weight."],
-    ["At your door", "Our own delivery staff, usually within your slot."],
-  ];
+    ["how.1t", "how.1d"],
+    ["how.2t", "how.2d"],
+    ["how.3t", "how.3d"],
+  ] as const;
   return (
     <section aria-label="How it works" className="rounded-2xl bg-surface p-4 ring-1 ring-border">
       <ol className="grid gap-4 sm:grid-cols-3">
@@ -64,8 +67,12 @@ export function HowItWorks() {
           <li key={t} className="flex gap-3">
             <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary-soft font-display text-sm font-bold text-primary">{i + 1}</span>
             <span className="min-w-0">
-              <span className="block font-semibold">{t}</span>
-              <span className="block text-sm text-muted">{d}</span>
+              <span className="block font-semibold">
+                <T k={t} />
+              </span>
+              <span className="block text-sm text-muted">
+                <T k={d} />
+              </span>
             </span>
           </li>
         ))}

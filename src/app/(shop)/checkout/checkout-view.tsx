@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Banknote, Bike, CreditCard, LoaderCircle, LogOut, PhoneCall, RefreshCcw, ShieldCheck, Smartphone, Store, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { placeOrderAction, setDefaultAddressAction, updateProfileAction } from "@/app/actions";
+import { useLang, useT } from "@/components/i18n";
 import { useSettings } from "@/components/providers";
 import { Bill } from "@/components/shop/bill";
 import { openGateway } from "@/components/shop/gateway";
@@ -14,6 +15,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Switch } from "@/components/ui/field";
 import { cartQuote, useCart, useHydrated } from "@/lib/cart-store";
 import { rupees } from "@/lib/money";
+import { slotText, type Key } from "@/lib/i18n";
 import { deliveryFee } from "@/lib/settings";
 import { deliverySlots, pickupSlots, type SlotOption } from "@/lib/slots";
 import type { Address, FulfilmentMode, PaymentMethod, SubPref } from "@/lib/types";
@@ -33,6 +35,7 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
   const router = useRouter();
   const hydrated = useHydrated();
   const settings = useSettings();
+  const t = useT();
   const cart = useCart((s) => s.cart);
   const clearCart = useCart((s) => s.clear);
   const { customer, addresses, wallet: balance, bookings, onlinePayments } = data;
@@ -79,26 +82,26 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
     return (
       <div className="grid justify-items-center gap-3 rounded-3xl bg-surface px-6 py-12 text-center ring-1 ring-border" role="status">
         <LoaderCircle className="size-8 animate-spin text-primary" aria-hidden />
-        <p className="font-display text-lg font-semibold">Confirming your order…</p>
+        <p className="font-display text-lg font-semibold">{t("checkout.confirming")}</p>
       </div>
     );
 
   if (!lines.length)
     return (
       <div className="grid justify-items-center gap-3 rounded-3xl bg-surface px-6 py-12 text-center ring-1 ring-border">
-        <h1 className="text-xl font-semibold">Nothing to check out</h1>
-        <p className="text-muted">Your cart is empty or the items in it just went out of stock.</p>
-        <ButtonLink href="/">Back to shop</ButtonLink>
+        <h1 className="text-xl font-semibold">{t("checkout.nothingTitle")}</h1>
+        <p className="text-muted">{t("checkout.nothingBody")}</p>
+        <ButtonLink href="/shop">{t("common.backToShop")}</ButtonLink>
       </div>
     );
 
   const codBlocked = q.total > settings.codLimit;
-  const missing: string[] = [];
-  if (!customer) missing.push("log in");
-  else if (!customer.name) missing.push("add your name");
-  if (mode === "delivery" && !address) missing.push("add an address");
-  if (!slot) missing.push(mode === "delivery" ? "choose a slot" : "choose a pickup time");
-  if (!settings.acceptingOrders) missing.push("wait until the store reopens online orders");
+  const missing: Key[] = [];
+  if (!customer) missing.push("checkout.missingLogin");
+  else if (!customer.name) missing.push("checkout.missingName");
+  if (mode === "delivery" && !address) missing.push("checkout.missingAddress");
+  if (!slot) missing.push(mode === "delivery" ? "checkout.missingSlot" : "checkout.missingPickup");
+  if (!settings.acceptingOrders) missing.push("checkout.missingOpen");
   const ready = missing.length === 0 && !q.belowMinimum && !(method === "cod" && codBlocked);
 
   const place = async () => {
@@ -132,9 +135,9 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
       <div className="grid gap-4">
-        <h1 className="text-2xl font-semibold">Checkout</h1>
+        <h1 className="text-2xl font-semibold">{t("cart.checkout")}</h1>
 
-        <Step n={1} title="Your details" done={!!customer}>
+        <Step n={1} title={t("checkout.details")} done={!!customer}>
           {customer ? (
             <div className="flex items-center justify-between gap-3">
               {customer.name ? (
@@ -152,7 +155,7 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
                   router.refresh();
                 }}
               >
-                <LogOut className="size-4" aria-hidden /> Not you?
+                <LogOut className="size-4" aria-hidden /> {t("checkout.notYou")}
               </Button>
             </div>
           ) : (
@@ -160,16 +163,16 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
           )}
         </Step>
 
-        <Step n={2} title="Delivery or pickup" done>
-          <div role="radiogroup" aria-label="How do you want your order" className="grid grid-cols-2 gap-2">
-            <Choice checked={mode === "delivery"} onClick={() => setMode("delivery")} icon={<Bike className="size-5" />} title="Deliver to me" sub={q.subtotal >= settings.freeDeliveryAt ? "Free delivery" : `From ${rupees(deliveryFee(settings, 0))}`} />
-            <Choice checked={mode === "pickup"} onClick={() => setMode("pickup")} icon={<Store className="size-5" />} title="I'll pick it up" sub="Free · at the counter" />
+        <Step n={2} title={t("checkout.mode")} done>
+          <div role="radiogroup" aria-label={t("checkout.mode")} className="grid grid-cols-2 gap-2">
+            <Choice checked={mode === "delivery"} onClick={() => setMode("delivery")} icon={<Bike className="size-5" />} title={t("checkout.deliver")} sub={q.subtotal >= settings.freeDeliveryAt ? t("checkout.freeDelivery") : t("checkout.from", { amount: rupees(deliveryFee(settings, 0)) })} />
+            <Choice checked={mode === "pickup"} onClick={() => setMode("pickup")} icon={<Store className="size-5" />} title={t("checkout.pickup")} sub={t("checkout.pickupSub")} />
           </div>
-          {mode === "pickup" ? <p className="mt-3 text-sm text-muted">Collect from {settings.address}. Show the pickup code we give you at the counter.</p> : null}
+          {mode === "pickup" ? <p className="mt-3 text-sm text-muted">{t("checkout.pickupNote", { address: settings.address })}</p> : null}
         </Step>
 
         {mode === "delivery" ? (
-          <Step n={3} title="Delivery address" done={!!address}>
+          <Step n={3} title={t("checkout.address")} done={!!address}>
             {customer ? (
               <AddressStep
                 addresses={addresses}
@@ -181,29 +184,29 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
                 onPickup={() => setMode("pickup")}
               />
             ) : (
-              <p className="text-sm text-muted">Log in first so we can save your address.</p>
+              <p className="text-sm text-muted">{t("checkout.loginFirst")}</p>
             )}
           </Step>
         ) : null}
 
-        <Step n={mode === "delivery" ? 4 : 3} title={mode === "delivery" ? "Delivery slot" : "Pickup time"} done={!!slot}>
+        <Step n={mode === "delivery" ? 4 : 3} title={mode === "delivery" ? t("checkout.slot") : t("checkout.pickupTime")} done={!!slot}>
           <SlotPicker days={days} day={day} setDay={setDay} slotId={slot?.id} setSlotId={setSlotId} />
         </Step>
 
-        <Step n={mode === "delivery" ? 5 : 4} title="If an item is out of stock" done>
-          <div role="radiogroup" aria-label="If an item is out of stock" className="grid gap-2 sm:grid-cols-3">
-            <Choice checked={subPref === "similar"} onClick={() => setSubPref("similar")} icon={<RefreshCcw className="size-5" />} title="Replace with similar" sub="Same type, never more than 10% dearer" />
-            <Choice checked={subPref === "ask"} onClick={() => setSubPref("ask")} icon={<PhoneCall className="size-5" />} title="Ask me first" sub={`It shows on your order page and we may call. No reply in ${settings.substitutionTimeoutMin} min removes it.`} />
-            <Choice checked={subPref === "remove"} onClick={() => setSubPref("remove")} icon={<Trash2 className="size-5" />} title="Remove it" sub="And refund the amount" />
+        <Step n={mode === "delivery" ? 5 : 4} title={t("sub.title")} done>
+          <div role="radiogroup" aria-label={t("sub.title")} className="grid gap-2 sm:grid-cols-3">
+            <Choice checked={subPref === "similar"} onClick={() => setSubPref("similar")} icon={<RefreshCcw className="size-5" />} title={t("sub.similar")} sub={t("sub.similarSub")} />
+            <Choice checked={subPref === "ask"} onClick={() => setSubPref("ask")} icon={<PhoneCall className="size-5" />} title={t("sub.ask")} sub={t("sub.askSub", { min: settings.substitutionTimeoutMin })} />
+            <Choice checked={subPref === "remove"} onClick={() => setSubPref("remove")} icon={<Trash2 className="size-5" />} title={t("sub.remove")} sub={t("sub.removeSub")} />
           </div>
         </Step>
 
-        <Step n={mode === "delivery" ? 6 : 5} title="Payment" done>
-          <div role="radiogroup" aria-label="Payment method" className="grid gap-2">
+        <Step n={mode === "delivery" ? 6 : 5} title={t("checkout.payment")} done>
+          <div role="radiogroup" aria-label={t("checkout.payment")} className="grid gap-2">
             {onlinePayments ? (
               <>
-                <Choice row checked={method === "upi"} onClick={() => setMethod("upi")} icon={<Smartphone className="size-5" />} title="UPI" sub="GPay, PhonePe, Paytm or any UPI app" badge="Fastest" />
-                <Choice row checked={method === "card"} onClick={() => setMethod("card")} icon={<CreditCard className="size-5" />} title="Debit or credit card" sub="Visa, Mastercard, RuPay" />
+                <Choice row checked={method === "upi"} onClick={() => setMethod("upi")} icon={<Smartphone className="size-5" />} title="UPI" sub={t("checkout.upiSub")} badge={t("checkout.fastest")} />
+                <Choice row checked={method === "card"} onClick={() => setMethod("card")} icon={<CreditCard className="size-5" />} title={t("checkout.card")} sub="Visa, Mastercard, RuPay" />
               </>
             ) : null}
             <Choice
@@ -212,17 +215,17 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
               onClick={() => setMethod("cod")}
               disabled={codBlocked}
               icon={<Banknote className="size-5" />}
-              title={mode === "pickup" ? "Pay at the counter" : "Cash or UPI on delivery"}
-              sub={codBlocked ? `Available for orders up to ${rupees(settings.codLimit)}` : mode === "pickup" ? "Cash or UPI when you collect" : "Cash or scan-and-pay UPI when it arrives. You pay the exact final bill."}
+              title={mode === "pickup" ? t("checkout.payCounter") : t("checkout.cod")}
+              sub={codBlocked ? t("checkout.codUpTo", { amount: rupees(settings.codLimit) }) : mode === "pickup" ? t("checkout.payCounterSub") : t("checkout.codSub")}
             />
           </div>
           {balance > 0 ? (
             <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-primary-soft px-3.5 py-1.5">
               <label htmlFor="use-wallet" className="flex items-center gap-2 text-sm">
                 <Wallet className="size-4 text-primary" aria-hidden />
-                Use wallet balance <b className="tabular">{rupees(balance)}</b>
+                {t("checkout.useWallet")} <b className="tabular">{rupees(balance)}</b>
               </label>
-              <Switch id="use-wallet" checked={useWallet} onChange={setUseWallet} label="Use wallet balance" />
+              <Switch id="use-wallet" checked={useWallet} onChange={setUseWallet} label={t("checkout.useWallet")} />
             </div>
           ) : null}
         </Step>
@@ -231,37 +234,41 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
       <aside className="grid gap-3 lg:sticky lg:top-32">
         <Bill
           rows={[
-            { label: `Items (${q.itemCount})`, value: q.subtotal, strike: q.savings > 0 ? q.mrpTotal : undefined },
+            { label: t("bill.items", { n: q.itemCount }), value: q.subtotal, strike: q.savings > 0 ? q.mrpTotal : undefined },
             {
-              label: mode === "pickup" ? "Pickup" : km ? `Delivery · ${km} km` : "Delivery",
-              value: q.deliveryFee === 0 ? "Free" : q.deliveryFee,
+              label: mode === "pickup" ? t("bill.pickup") : km ? t("bill.deliveryKm", { km }) : t("bill.delivery"),
+              value: q.deliveryFee === 0 ? t("common.free") : q.deliveryFee,
               tone: q.deliveryFee === 0 ? "save" : undefined,
             },
-            ...(q.walletUsed ? [{ label: "Wallet", value: -q.walletUsed, tone: "save" as const }] : []),
+            ...(q.walletUsed ? [{ label: t("bill.wallet"), value: -q.walletUsed, tone: "save" as const }] : []),
           ]}
           total={q.total}
-          totalLabel={q.hasLoose ? "To pay (estimated)" : "To pay"}
+          totalLabel={q.hasLoose ? t("bill.toPayEst") : t("bill.toPay")}
           note={
             q.hasLoose
-              ? "Includes loose items at the weight you chose. If the packed weight is lower, the difference goes to your wallet."
-              : "Prices include GST. You'll get a GST invoice once your order is packed."
+              ? t("checkout.looseNote")
+              : t("checkout.gstNote")
           }
         />
         <p className="flex items-center gap-2 px-1 text-xs text-muted">
-          <ShieldCheck className="size-4 shrink-0" aria-hidden /> Cancel free of charge until we start packing.
+          <ShieldCheck className="size-4 shrink-0" aria-hidden /> {t("checkout.cancelFree")}
         </p>
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur lg:static lg:border-0 lg:bg-transparent lg:p-0">
           {!ready ? (
             <p className="mb-2 text-center text-sm text-muted lg:text-left" role="status">
-              {q.belowMinimum ? `Minimum order is ${rupees(settings.minOrder)}` : codBlocked && method === "cod" ? `Cash on delivery is available up to ${rupees(settings.codLimit)}` : `To continue, ${missing.join(", ")}.`}
+              {q.belowMinimum
+                ? t("checkout.minOrder", { amount: rupees(settings.minOrder) })
+                : codBlocked && method === "cod"
+                  ? t("checkout.codUpTo", { amount: rupees(settings.codLimit) })
+                  : t("checkout.toContinue", { list: missing.map((m) => t(m)).join(", ") })}
             </p>
           ) : null}
           <Button size="lg" className="w-full justify-between" disabled={!ready || placing} onClick={place}>
             <span className="tabular">{rupees(q.total)}</span>
-            <span>{method === "cod" ? "Place order" : `Pay ${rupees(q.total)}`}</span>
+            <span>{method === "cod" ? t("checkout.place") : t("checkout.pay", { amount: rupees(q.total) })}</span>
           </Button>
           <p className="mt-2 hidden text-center text-xs text-muted lg:block">
-            By placing the order you agree to our <Link href="/legal/terms" className="underline">terms</Link> and <Link href="/legal/privacy" className="underline">privacy policy</Link>.
+            {t("checkout.agree")} <Link href="/legal/terms" className="underline">Terms</Link> · <Link href="/legal/privacy" className="underline">Privacy</Link>
           </p>
         </div>
         <div className="h-24 lg:hidden" aria-hidden />
@@ -355,6 +362,9 @@ function SlotPicker({
   setSlotId: (id: string) => void;
 }) {
   const current = days[day];
+  const t = useT();
+  const lang = useLang();
+  const dayName = (d: string) => t(d === "Today" ? "day.today" : "day.tomorrow");
   return (
     <div className="grid gap-3">
       <div role="tablist" aria-label="Day" className="inline-flex gap-1 justify-self-start rounded-xl bg-surface-2 p-1">
@@ -368,14 +378,14 @@ function SlotPicker({
               onClick={() => setDay(i)}
               className={cn("h-10 cursor-pointer rounded-lg px-4 text-sm font-bold transition-colors", i === day ? "bg-surface shadow-sm" : "text-muted hover:text-fg")}
             >
-              {d.day} <span className="font-normal text-muted">· {open} open</span>
+              {dayName(d.day)} <span className="font-normal text-muted">· {t("slot.open", { n: open })}</span>
             </button>
           );
         })}
       </div>
       {current ? (
         current.slots.some((x) => !x.closed) ? (
-          <div role="radiogroup" aria-label={`${current.day} slots`} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div role="radiogroup" aria-label={dayName(current.day)} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {current.slots.map((x) => {
               const left = x.capacity - x.booked;
               const checked = x.id === slotId;
@@ -392,16 +402,16 @@ function SlotPicker({
                     checked ? "bg-primary-soft ring-2 ring-primary" : "bg-surface ring-border hover:bg-surface-2",
                   )}
                 >
-                  <span className="font-bold tabular">{x.label}</span>
+                  <span className="font-bold tabular">{slotText(lang, x)}</span>
                   <span className={cn("text-xs", x.closed ? "" : left <= 2 && x.capacity < 99 ? "font-bold text-accent" : "text-muted")}>
-                    {x.closed ? x.reason : x.capacity >= 99 ? "Available" : left <= 2 ? `Only ${left} left` : "Available"}
+                    {x.closed ? t(x.reason === "Full" ? "slot.full" : "slot.closed") : x.capacity < 99 && left <= 2 ? t("slot.onlyLeft", { n: left }) : t("slot.available")}
                   </span>
                 </button>
               );
             })}
           </div>
         ) : (
-          <p className="rounded-xl bg-surface-2 px-3.5 py-3 text-sm text-muted">No slots left {current.day.toLowerCase()}. Try the other day.</p>
+          <p className="rounded-xl bg-surface-2 px-3.5 py-3 text-sm text-muted">{t("slot.noneLeft", { day: dayName(current.day) })}</p>
         )
       ) : null}
     </div>
@@ -413,6 +423,7 @@ function NameForm({ phone }: { phone: string }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const t = useT();
   return (
     <form
       className="flex flex-1 flex-wrap items-end gap-2"
@@ -425,9 +436,9 @@ function NameForm({ phone }: { phone: string }) {
         router.refresh();
       }}
     >
-      <Field id="checkout-name" label={`Your name (${phone})`} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className="min-w-48 flex-1" />
+      <Field id="checkout-name" label={t("checkout.yourName", { phone })} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className="min-w-48 flex-1" />
       <Button type="submit" disabled={busy || name.trim().length < 2} className="h-12">
-        Save
+        {t("common.save")}
       </Button>
     </form>
   );

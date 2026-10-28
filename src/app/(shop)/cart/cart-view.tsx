@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { ArrowRight, Bike, Scale, ShoppingBasket, Trash2 } from "lucide-react";
 import { refreshCartAction } from "@/app/actions";
+import { pick, T, useLang, useT } from "@/components/i18n";
 import { useSettings } from "@/components/providers";
 import { AddControl } from "@/components/shop/add-control";
 import { Bill } from "@/components/shop/bill";
@@ -18,6 +19,8 @@ import type { LiveProduct } from "@/lib/types";
 export function CartView({ essentials }: { essentials: LiveProduct[] }) {
   const hydrated = useHydrated();
   const settings = useSettings();
+  const t = useT();
+  const lang = useLang();
   const cart = useCart((s) => s.cart);
   const remove = useCart((s) => s.remove);
   const clear = useCart((s) => s.clear);
@@ -45,13 +48,13 @@ export function CartView({ essentials }: { essentials: LiveProduct[] }) {
           <span className="grid size-16 place-items-center rounded-2xl bg-primary-soft text-primary">
             <ShoppingBasket className="size-8" aria-hidden />
           </span>
-          <h1 className="text-xl font-semibold">Your cart is empty</h1>
-          <p className="max-w-xs text-muted">Add atta, dal, milk and the rest of your list. We'll pack it fresh.</p>
-          <ButtonLink href="/" className="mt-1">
-            Start shopping
+          <h1 className="text-xl font-semibold">{t("cart.emptyTitle")}</h1>
+          <p className="max-w-xs text-muted">{t("cart.emptyBody")}</p>
+          <ButtonLink href="/shop" className="mt-1">
+            {t("common.startShopping")}
           </ButtonLink>
         </div>
-        <ProductRail title="Monthly essentials" products={essentials} />
+        <ProductRail label="Monthly essentials" title={<T k="home.essentials" />} products={essentials} />
       </div>
     );
 
@@ -61,9 +64,9 @@ export function CartView({ essentials }: { essentials: LiveProduct[] }) {
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
       <div className="grid gap-4">
         <div className="flex items-end justify-between">
-          <h1 className="text-2xl font-semibold">Cart</h1>
+          <h1 className="text-2xl font-semibold">{t("nav.cart")}</h1>
           <button onClick={clear} className="inline-flex h-11 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-muted hover:text-danger">
-            <Trash2 className="size-4" aria-hidden /> Empty cart
+            <Trash2 className="size-4" aria-hidden /> {t("cart.empty")}
           </button>
         </div>
 
@@ -71,14 +74,14 @@ export function CartView({ essentials }: { essentials: LiveProduct[] }) {
           {q.toFreeDelivery > 0 ? (
             <p className="flex items-center gap-2 text-sm">
               <Bike className="size-4 text-primary" aria-hidden />
-              Add <b className="tabular">{rupees(q.toFreeDelivery)}</b> more for free delivery
+              {t("cart.addMoreFree", { amount: rupees(q.toFreeDelivery) })}
             </p>
           ) : (
             <p className="flex items-center gap-2 text-sm font-bold text-primary">
-              <Bike className="size-4" aria-hidden /> You've unlocked free delivery
+              <Bike className="size-4" aria-hidden /> {t("cart.freeUnlocked")}
             </p>
           )}
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Progress to free delivery">
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label={t("cart.progressAria")}>
             <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
           </div>
         </div>
@@ -95,25 +98,25 @@ export function CartView({ essentials }: { essentials: LiveProduct[] }) {
                   <div className="min-w-0 flex-1">
                     <Link href={`/p/${p.slug}`} className="line-clamp-2 font-semibold leading-snug hover:text-primary">
                       {p.brand ? `${p.brand} ` : ""}
-                      {p.name}
+                      {pick(lang, p.name, p.nameMr)}
                     </Link>
                     <p className="text-sm text-muted">
                       {p.unitType === "weight" ? (
                         <>
-                          {grams(qty)} · {rupees(p.price)}/kg <span className="font-semibold text-accent">· approx.</span>
+                          {grams(qty)} · {rupees(p.price)}/kg <span className="font-semibold text-accent">· {t("common.approx")}</span>
                         </>
                       ) : (
                         p.unitLabel
                       )}
                     </p>
-                    {!p.available ? <p className="mt-1 text-sm font-bold text-danger">Out of stock. Won't be included in your order.</p> : null}
+                    {!p.available ? <p className="mt-1 text-sm font-bold text-danger">{t("cart.lineOut")}</p> : null}
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
                     {p.available ? (
                       <AddControl product={p} className="w-[148px]" />
                     ) : (
                       <button onClick={() => remove(productId)} className="h-10 cursor-pointer rounded-xl px-3 text-sm font-bold text-danger hover:bg-danger-soft">
-                        Remove
+                        {t("common.remove")}
                       </button>
                     )}
                     <span className="w-20 text-right leading-tight">
@@ -130,7 +133,7 @@ export function CartView({ essentials }: { essentials: LiveProduct[] }) {
         {q.hasLoose ? (
           <p className="flex items-start gap-2 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm">
             <Scale className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
-            Loose items are weighed when we pack. You'll see the exact bill before delivery, and if it's lower, the difference goes to your wallet.
+            {t("cart.looseNote")}
           </p>
         ) : null}
       </div>
@@ -138,30 +141,30 @@ export function CartView({ essentials }: { essentials: LiveProduct[] }) {
       <aside className="grid gap-3 lg:sticky lg:top-32">
         <Bill
           rows={[
-            { label: "Item total", value: q.subtotal, strike: q.savings > 0 ? q.mrpTotal : undefined },
-            { label: "Delivery fee", value: q.deliveryFee === 0 ? "Free" : q.deliveryFee, tone: q.deliveryFee === 0 ? "save" : undefined },
-            ...(q.savings > 0 ? [{ label: "You save against MRP", value: q.savings, tone: "save" as const }] : []),
+            { label: t("bill.itemTotal"), value: q.subtotal, strike: q.savings > 0 ? q.mrpTotal : undefined },
+            { label: t("bill.deliveryFee"), value: q.deliveryFee === 0 ? t("common.free") : q.deliveryFee, tone: q.deliveryFee === 0 ? "save" : undefined },
+            ...(q.savings > 0 ? [{ label: t("bill.saveMrp"), value: q.savings, tone: "save" as const }] : []),
           ]}
           total={q.total}
-          totalLabel={q.hasLoose ? "To pay (estimated)" : "To pay"}
-          note="Delivery fee depends on distance and is confirmed at checkout. Free for store pickup."
+          totalLabel={q.hasLoose ? t("bill.toPayEst") : t("bill.toPay")}
+          note={t("cart.feeNote")}
         />
         {q.belowMinimum ? (
           <p className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-sm font-semibold text-danger" role="status">
-            Minimum order is {rupees(settings.minOrder)}. Add {rupees(settings.minOrder - q.subtotal)} more to check out.
+            {t("cart.minOrder", { min: rupees(settings.minOrder), more: rupees(settings.minOrder - q.subtotal) })}
           </p>
         ) : null}
         <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-20 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur md:static md:border-0 md:bg-transparent md:p-0">
           {blocked ? (
             <Button size="lg" disabled className="w-full justify-between">
               <span className="tabular">{rupees(q.total)}</span>
-              <span>{!settings.acceptingOrders ? "Orders paused" : q.belowMinimum ? `Add ${rupees(settings.minOrder - q.subtotal)} more` : "Nothing in stock"}</span>
+              <span>{!settings.acceptingOrders ? t("cart.paused") : q.belowMinimum ? t("cart.addMore", { amount: rupees(settings.minOrder - q.subtotal) }) : t("cart.nothingInStock")}</span>
             </Button>
           ) : (
             <ButtonLink href="/checkout" size="lg" className="w-full justify-between">
               <span className="tabular">{rupees(q.total)}</span>
               <span className="flex items-center gap-1.5">
-                Checkout <ArrowRight className="size-5" aria-hidden />
+                {t("cart.checkout")} <ArrowRight className="size-5" aria-hidden />
               </span>
             </ButtonLink>
           )}
@@ -169,7 +172,7 @@ export function CartView({ essentials }: { essentials: LiveProduct[] }) {
       </aside>
 
       <div className="lg:col-span-2">
-        <ProductRail title="Did you forget?" sub="Essentials most homes order every week" products={missed} />
+        <ProductRail label="Did you forget?" title={<T k="cart.forgot" />} sub={<T k="cart.forgotSub" />} products={missed} />
       </div>
     </div>
   );

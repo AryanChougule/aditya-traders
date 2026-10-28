@@ -15,6 +15,7 @@ export function toLiveProduct(r: ProductRow): LiveProduct {
     slug: r.slug,
     name: r.name,
     nameHi: r.nameHi,
+    nameMr: r.nameMr,
     brand: r.brand ?? undefined,
     categoryId: r.categoryId,
     unitType: r.unitType,
@@ -54,7 +55,7 @@ export async function getCategories(): Promise<Category[]> {
   cacheLife("hours");
   const db = await getDb();
   const rows = await db.select().from(schema.categories).orderBy(asc(schema.categories.sort));
-  return rows.map((c) => ({ id: c.id, slug: c.slug, name: c.name, nameHi: c.nameHi, icon: c.icon, tint: c.tint as Tint }));
+  return rows.map((c) => ({ id: c.id, slug: c.slug, name: c.name, nameHi: c.nameHi, nameMr: c.nameMr, icon: c.icon, tint: c.tint as Tint }));
 }
 
 /** Every product on sale or temporarily out (inactive ones are hidden). Busted on any stock or price change. */

@@ -8,6 +8,8 @@ export type Category = {
   slug: string;
   name: string;
   nameHi: string;
+  /** Marathi display name (Devanagari); empty falls back to English */
+  nameMr: string;
   icon: string;
   tint: Tint;
 };
@@ -20,6 +22,8 @@ export type Product = {
   slug: string;
   name: string;
   nameHi: string;
+  /** Marathi display name (Devanagari); empty falls back to English */
+  nameMr: string;
   brand?: string;
   categoryId: string;
   unitType: UnitType;
@@ -50,7 +54,7 @@ export type LiveProduct = Product & { available: boolean; stockLeft: number };
 export type CartLine = {
   productId: string;
   qty: number;
-  snap?: Pick<LiveProduct, "slug" | "name" | "brand" | "price" | "mrp" | "unitType" | "unitLabel" | "icon" | "tint" | "available" | "stockLeft">;
+  snap?: Pick<LiveProduct, "slug" | "name" | "nameMr" | "brand" | "price" | "mrp" | "unitType" | "unitLabel" | "icon" | "tint" | "available" | "stockLeft">;
 };
 
 export type FulfilmentMode = "delivery" | "pickup";

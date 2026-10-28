@@ -39,7 +39,7 @@ export function search<T extends Product>(query: string, products: T[], categori
   const scored: { p: T; score: number }[] = [];
 
   for (const p of products) {
-    const fields = [p.name, p.nameHi, p.brand ?? "", catName.get(p.categoryId) ?? "", ...p.aliases].map(norm).filter(Boolean);
+    const fields = [p.name, p.nameHi, p.nameMr, p.brand ?? "", catName.get(p.categoryId) ?? "", ...p.aliases].map(norm).filter(Boolean);
     let best = 0;
     for (const f of fields) {
       if (f === q) best = Math.max(best, 3);

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ChevronRight } from "lucide-react";
+import { Pick, T } from "@/components/i18n";
 import { ProductRail } from "@/components/shop/product-rail";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { similarTo } from "@/lib/catalog";
@@ -36,12 +37,18 @@ async function Product(props: PageProps<"/p/[slug]">) {
   return (
     <div className="grid grid-cols-1 gap-8">
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1 text-sm text-muted">
-        <Link href="/" className="hover:text-fg">Home</Link>
+        <Link href="/shop" className="hover:text-fg">
+          <T k="nav.home" />
+        </Link>
         <ChevronRight className="size-4 shrink-0" aria-hidden />
-        {cat ? <Link href={`/c/${cat.slug}`} className="truncate hover:text-fg">{cat.name}</Link> : null}
+        {cat ? (
+          <Link href={`/c/${cat.slug}`} className="truncate hover:text-fg">
+            <Pick en={cat.name} mr={cat.nameMr} />
+          </Link>
+        ) : null}
       </nav>
-      <ProductDetail product={product} categoryName={cat?.name ?? ""} />
-      <ProductRail title="Similar items" href={cat ? `/c/${cat.slug}` : undefined} products={similarTo(product, catalog, 10)} />
+      <ProductDetail product={product} categoryName={cat?.name ?? ""} categoryNameMr={cat?.nameMr ?? ""} />
+      <ProductRail label="Similar items" title={<T k="product.similar" />} href={cat ? `/c/${cat.slug}` : undefined} products={similarTo(product, catalog, 10)} />
     </div>
   );
 }

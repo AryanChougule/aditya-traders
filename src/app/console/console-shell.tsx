@@ -62,7 +62,7 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
           </Suspense>
           <div className="hidden gap-1 lg:mt-auto lg:grid">
             <StoreStatus audience="store" className="px-3 pb-2" />
-            <Link href="/" className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-fg">
+            <Link href="/shop" className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-fg">
               <ExternalLink className="size-5" aria-hidden /> Open the shop
             </Link>
             <Link href="/rider" className="flex h-11 items-center gap-2.5 rounded-xl px-3 text-sm font-semibold text-muted hover:bg-surface-2 hover:text-fg">

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect } from "react";
 import { Toaster } from "sonner";
+import { LangEffect } from "@/components/i18n";
 import { useCart } from "@/lib/cart-store";
 import type { StoreSettings } from "@/lib/settings";
 
@@ -27,6 +28,7 @@ export function Providers({ settings, children }: { settings: StoreSettings; chi
 
   return (
     <SettingsContext.Provider value={settings}>
+      <LangEffect />
       {children}
       <Toaster
         position="top-center"

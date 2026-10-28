@@ -269,6 +269,7 @@ export async function storeCancelAction(orderId: string) {
 const productInput = z.object({
   name: z.string().trim().min(2).max(80),
   nameHi: z.string().trim().max(80).default(""),
+  nameMr: z.string().trim().max(80).default(""),
   brand: z.string().trim().max(40).optional(),
   categoryId: z.string().max(40),
   unitType: z.enum(["piece", "weight"]),
@@ -342,6 +343,7 @@ async function insertProduct(db: Awaited<ReturnType<typeof getDb>>, p: z.infer<t
     slug,
     name: p.name,
     nameHi: p.nameHi,
+    nameMr: p.nameMr,
     brand: p.brand || null,
     categoryId: p.categoryId,
     unitType: p.unitType,
@@ -365,7 +367,7 @@ async function insertProduct(db: Awaited<ReturnType<typeof getDb>>, p: z.infer<t
 
 /**
  * Bulk import from a spreadsheet saved as CSV. Columns (header row required):
- * name, name_hi, brand, category, unit_type (piece|weight), unit, price, mrp, hsn, gst, aisle, stock, aliases
+ * name, name_mr, name_hi, brand, category, unit_type (piece|weight), unit, price, mrp, hsn, gst, aisle, stock, aliases
  * Prices in rupees. Existing products with the same name + brand + unit are updated instead of duplicated.
  */
 export async function importProductsAction(csv: string): Promise<Result<{ created: number; updated: number; errors: string[] }>> {
@@ -390,6 +392,7 @@ export async function importProductsAction(csv: string): Promise<Result<{ create
         const parsed = productInput.safeParse({
           name: col(r, "name"),
           nameHi: col(r, "name_hi"),
+          nameMr: col(r, "name_mr"),
           brand: col(r, "brand") || undefined,
           categoryId: cat?.id ?? "",
           unitType: col(r, "unit_type") === "weight" ? "weight" : "piece",
@@ -421,7 +424,7 @@ export async function importProductsAction(csv: string): Promise<Result<{ create
         if (match) {
           await db
             .update(schema.products)
-            .set({ price: p.price, mrp: p.mrp, stock: p.stock, hsn: p.hsn || match.hsn, gstRate: p.gstRate, aisle: p.aisle, nameHi: p.nameHi || match.nameHi, active: true, updatedAt: new Date() })
+            .set({ price: p.price, mrp: p.mrp, stock: p.stock, hsn: p.hsn || match.hsn, gstRate: p.gstRate, aisle: p.aisle, nameHi: p.nameHi || match.nameHi, nameMr: p.nameMr || match.nameMr, active: true, updatedAt: new Date() })
             .where(eq(schema.products.id, match.id));
           updated++;
         } else {

@@ -16,6 +16,7 @@ type Snap = NonNullable<CartLine["snap"]>;
 const snapOf = (p: LiveProduct | Snap): Snap => ({
   slug: p.slug,
   name: p.name,
+  nameMr: p.nameMr ?? "",
   brand: p.brand,
   price: p.price,
   mrp: p.mrp,

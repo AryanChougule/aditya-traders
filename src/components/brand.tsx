@@ -16,7 +16,7 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Brand({ href = "/", sub }: { href?: string; sub?: string }) {
+export function Brand({ href = "/shop", sub }: { href?: string; sub?: string }) {
   const STORE = useSettings();
   return (
     <Link href={href} className="flex min-w-0 items-center gap-2.5 rounded-xl" aria-label={`${STORE.name} home`}>

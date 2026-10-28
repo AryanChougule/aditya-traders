@@ -1,4 +1,6 @@
 import { Check } from "lucide-react";
+import { T } from "@/components/i18n";
+import type { Key } from "@/lib/i18n";
 import { trackerSteps } from "@/lib/order-flow";
 import type { Order } from "@/lib/types";
 import { clock, cn } from "@/lib/utils";
@@ -28,7 +30,9 @@ export function Tracker({ order }: { order: Order }) {
             >
               {done ? <Check className="size-4" strokeWidth={3} aria-hidden /> : <span className="text-xs font-bold">{i + 1}</span>}
             </span>
-            <span className={cn("text-xs font-bold leading-tight", done ? "text-fg" : "text-muted")}>{s.label}</span>
+            <span className={cn("text-xs font-bold leading-tight", done ? "text-fg" : "text-muted")}>
+              <T k={`track.${s.label.toLowerCase().replace(/ /g, "")}` as Key} />
+            </span>
             <span className="text-[11px] text-muted tabular">{at ? clock(at) : " "}</span>
           </li>
         );

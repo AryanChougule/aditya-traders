@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Pick, T } from "@/components/i18n";
 import { Icon } from "@/components/ui/icon";
 import type { Category } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -15,8 +16,14 @@ export function CategoryTile({ c, count, className }: { c: Category; count?: num
       >
         <Icon name={c.icon} className="size-[42%]" strokeWidth={1.6} />
       </span>
-      <span className="line-clamp-2 text-[13px] font-semibold leading-tight">{c.name}</span>
-      {count !== undefined ? <span className="-mt-1.5 text-xs text-muted">{count} items</span> : null}
+      <span className="line-clamp-2 text-[13px] font-semibold leading-tight">
+        <Pick en={c.name} mr={c.nameMr} />
+      </span>
+      {count !== undefined ? (
+        <span className="-mt-1.5 text-xs text-muted">
+          <T k="common.items" v={{ n: count }} />
+        </span>
+      ) : null}
     </Link>
   );
 }

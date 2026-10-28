@@ -50,6 +50,8 @@ export function SettingsForm({ initial, gatewayReady, staff, meId }: { initial: 
         </Button>
       </div>
 
+      <AnnouncementCard value={s.announcement} onChange={(a) => set("announcement", a)} />
+
       <Card title="Taking orders">
         <ToggleRow label="Accept online orders" hint="Turn off to pause checkout (holiday, stock-taking). Shoppers can still browse." checked={s.acceptingOrders} onChange={(v) => set("acceptingOrders", v)} />
         <ToggleRow
@@ -244,5 +246,75 @@ function StaffCard({ staff, meId }: { staff: Staff[]; meId: string }) {
         </Button>
       </form>
     </Card>
+  );
+}
+
+type Announcement = StoreSettings["announcement"];
+
+/** The big message on the landing page, written in both languages. */
+function AnnouncementCard({ value: a, onChange }: { value: Announcement; onChange: (a: Announcement) => void }) {
+  const set = <K extends keyof Announcement>(k: K, v: Announcement[K]) => onChange({ ...a, [k]: v });
+  return (
+    <Card title="Landing page announcement" sub="The big banner customers see first on your website, with an Order now button. Use it for an offer or festival wishes. Write both languages; if Marathi is empty, English is shown.">
+      <ToggleRow label="Show the announcement" hint="When off, the landing page shows a plain welcome instead." checked={a.enabled} onChange={(v) => set("enabled", v)} />
+      <div role="radiogroup" aria-label="Style" className="flex flex-wrap gap-2">
+        {(
+          [
+            ["festival", "Festival wishes", "Deep red with marigolds and a diya"],
+            ["offer", "Offer", "Bold turmeric, big badge for the offer"],
+          ] as const
+        ).map(([k, label, hint]) => (
+          <button
+            key={k}
+            type="button"
+            role="radio"
+            aria-checked={a.kind === k}
+            onClick={() => set("kind", k)}
+            className={`grid cursor-pointer rounded-xl px-4 py-2.5 text-left ring-1 transition-colors ${a.kind === k ? "bg-primary-soft ring-2 ring-primary" : "ring-border hover:bg-surface-2"}`}
+          >
+            <span className="font-bold">{label}</span>
+            <span className="text-sm text-muted">{hint}</span>
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field id="an-title-en" label="Heading (English)" value={a.titleEn} maxLength={80} onChange={(e) => set("titleEn", e.target.value)} placeholder="Happy Diwali from Aditya Traders" />
+        <Field id="an-title-mr" label="Heading (मराठी)" value={a.titleMr} maxLength={80} onChange={(e) => set("titleMr", e.target.value)} lang="mr" placeholder="दिवाळीच्या हार्दिक शुभेच्छा!" />
+        <TextArea id="an-msg-en" label="Message (English)" value={a.messageEn} onChange={(v) => set("messageEn", v)} />
+        <TextArea id="an-msg-mr" label="Message (मराठी)" value={a.messageMr} onChange={(v) => set("messageMr", v)} lang="mr" />
+        <Field id="an-badge-en" label="Badge (English, optional)" value={a.badgeEn} maxLength={24} onChange={(e) => set("badgeEn", e.target.value)} placeholder={a.kind === "offer" ? "10% off" : "Diwali"} hint="A few words, shown big above the heading." />
+        <Field id="an-badge-mr" label="Badge (मराठी, optional)" value={a.badgeMr} maxLength={24} onChange={(e) => set("badgeMr", e.target.value)} lang="mr" placeholder={a.kind === "offer" ? "10% सूट" : "दिवाळी"} />
+      </div>
+      <Field
+        id="an-ends"
+        label="Show until (optional)"
+        type="date"
+        value={a.endsOn}
+        onChange={(e) => set("endsOn", e.target.value)}
+        hint="After this day it hides by itself, so an expired offer never stays up. Leave empty to keep it on."
+        className="max-w-xs"
+      />
+      <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
+        Only announce offers you've actually set up. The website doesn't apply discounts by itself: change product prices in Products & stock.
+      </p>
+    </Card>
+  );
+}
+
+function TextArea({ id, label, value, onChange, lang }: { id: string; label: string; value: string; onChange: (v: string) => void; lang?: string }) {
+  return (
+    <label htmlFor={id} className="grid gap-1.5 text-sm font-semibold">
+      {label}
+      <textarea
+        id={id}
+        lang={lang}
+        rows={3}
+        maxLength={240}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-xl border border-border bg-surface p-3 text-base font-normal outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+      />
+      <span className="text-xs font-normal text-muted">{value.length}/240</span>
+    </label>
   );
 }

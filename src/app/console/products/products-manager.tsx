@@ -252,7 +252,7 @@ function EditSheet({ product: p, isOwner, onClose }: { product: Row; isOwner: bo
 }
 
 function AddSheet({ categories, onClose }: { categories: Category[]; onClose: () => void }) {
-  const [f, setF] = useState({ name: "", nameHi: "", brand: "", categoryId: categories[0]?.id ?? "", unitType: "piece" as "piece" | "weight", unitLabel: "", price: "", mrp: "", hsn: "", gstRate: "5", aisle: "1", stock: "10", aliases: "" });
+  const [f, setF] = useState({ name: "", nameMr: "", brand: "", categoryId: categories[0]?.id ?? "", unitType: "piece" as "piece" | "weight", unitLabel: "", price: "", mrp: "", hsn: "", gstRate: "5", aisle: "1", stock: "10", aliases: "" });
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
 
@@ -260,7 +260,7 @@ function AddSheet({ categories, onClose }: { categories: Category[]; onClose: ()
     setBusy(true);
     const r = await createProductAction({
       name: f.name,
-      nameHi: f.nameHi,
+      nameMr: f.nameMr,
       brand: f.brand || undefined,
       categoryId: f.categoryId,
       unitType: f.unitType,
@@ -301,7 +301,7 @@ function AddSheet({ categories, onClose }: { categories: Category[]; onClose: ()
         <Field id="np-name" label="Name" value={f.name} onChange={set("name")} placeholder="e.g. Toor Dal (Loose)" />
         <div className="grid grid-cols-2 gap-3">
           <Field id="np-brand" label="Brand (optional)" value={f.brand} onChange={set("brand")} />
-          <Field id="np-hi" label="Hindi name (optional)" value={f.nameHi} onChange={set("nameHi")} lang="hi" />
+          <Field id="np-mr" label="Marathi name (optional)" value={f.nameMr} onChange={set("nameMr")} lang="mr" placeholder="उदा. सुटी तूर डाळ" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="grid gap-1.5 text-sm font-semibold">
@@ -347,9 +347,9 @@ function AddSheet({ categories, onClose }: { categories: Category[]; onClose: ()
   );
 }
 
-const SAMPLE_CSV = `name,name_hi,brand,category,unit_type,unit,price,mrp,hsn,gst,aisle,stock,aliases
-Toor Dal (Loose),तूर दाल,,atta-rice-dal,weight,,150,170,0713,0,3,50,arhar;tuvar;daal
-Classic Basmati Rice,बासमती चावल,India Gate,atta-rice-dal,piece,1 kg,175,210,1006,5,3,20,chawal;basmati`;
+const SAMPLE_CSV = `name,name_mr,brand,category,unit_type,unit,price,mrp,hsn,gst,aisle,stock,aliases
+Toor Dal (Loose),सुटी तूर डाळ,,atta-rice-dal,weight,,150,170,0713,0,3,50,arhar;tuvar;daal
+Classic Basmati Rice,बासमती तांदूळ,India Gate,atta-rice-dal,piece,1 kg,175,210,1006,5,3,20,chawal;basmati`;
 
 function ImportSheet({ onClose }: { onClose: () => void }) {
   const [text, setText] = useState("");

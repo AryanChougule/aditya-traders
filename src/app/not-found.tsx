@@ -8,7 +8,7 @@ export default function NotFound() {
         <LogoMark className="size-14" />
         <h1 className="text-2xl font-semibold">We couldn't find that page</h1>
         <p className="text-muted">The link may be old, or the product is no longer sold online.</p>
-        <Link href="/" className="inline-flex h-11 items-center rounded-xl bg-primary px-5 font-bold text-primary-fg">
+        <Link href="/shop" className="inline-flex h-11 items-center rounded-xl bg-primary px-5 font-bold text-primary-fg">
           Go to the shop
         </Link>
       </div>

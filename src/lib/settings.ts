@@ -32,6 +32,20 @@ export const settingsSchema = z.object({
   substitutionTimeoutMin: z.number().int().min(1).max(120),
   acceptingOrders: z.boolean(),
   onlinePayments: z.boolean(),
+  /** the big message on the landing page: an offer or festival wishes, in both languages */
+  announcement: z.object({
+    enabled: z.boolean(),
+    kind: z.enum(["offer", "festival"]),
+    titleEn: z.string().max(80),
+    titleMr: z.string().max(80),
+    messageEn: z.string().max(240),
+    messageMr: z.string().max(240),
+    /** optional: the offer or occasion in a few words, shown as a big badge (e.g. "10% off", "दिवाळी") */
+    badgeEn: z.string().max(24),
+    badgeMr: z.string().max(24),
+    /** last day to show it (YYYY-MM-DD, IST); empty means no end date */
+    endsOn: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, "Use a date like 2026-11-12, or leave it empty"),
+  }),
 });
 
 export type StoreSettings = z.infer<typeof settingsSchema>;
@@ -64,7 +78,27 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   substitutionTimeoutMin: 10,
   acceptingOrders: true,
   onlinePayments: false,
+  // Diwali 2026 is on 8 November. Festival wishes only: offers are for the owner to set, not to be invented.
+  announcement: {
+    enabled: true,
+    kind: "festival",
+    titleEn: "Happy Diwali from Aditya Traders",
+    titleMr: "आदित्य ट्रेडर्सकडून दिवाळीच्या हार्दिक शुभेच्छा!",
+    messageEn: "Get your faral ingredients, oil, ghee and puja essentials from your neighbourhood store, delivered to your door or ready at the counter.",
+    messageMr: "फराळाचं सामान, तेल, तूप आणि पूजेचं साहित्य आता घरबसल्या order करा. घरपोच delivery, किंवा counter वरून pickup.",
+    badgeEn: "Diwali",
+    badgeMr: "दिवाळी",
+    endsOn: "2026-11-12",
+  },
 };
+
+/** The announcement if it should be showing today (IST), otherwise null. */
+export function activeAnnouncement(s: StoreSettings, todayKey: string) {
+  const a = s.announcement;
+  if (!a.enabled || !(a.titleEn || a.titleMr)) return null;
+  if (a.endsOn && todayKey > a.endsOn) return null;
+  return a;
+}
 
 export function deliveryFee(s: Pick<StoreSettings, "feeBands">, km: number): Paise {
   const bands = [...s.feeBands].sort((a, b) => a.upToKm - b.upToKm);

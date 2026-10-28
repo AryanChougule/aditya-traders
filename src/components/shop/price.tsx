@@ -1,3 +1,4 @@
+import { T } from "@/components/i18n";
 import { discountPct, rupees } from "@/lib/money";
 import type { Paise, UnitType } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,11 @@ export function Price({
             <span className="sr-only">MRP </span>
             {rupees(mrp)}
           </span>
-          {size === "lg" ? <span className="text-sm font-bold text-accent">{off}% off</span> : null}
+          {size === "lg" ? (
+            <span className="text-sm font-bold text-accent">
+              <T k="product.off" v={{ n: off }} />
+            </span>
+          ) : null}
         </>
       ) : null}
     </div>

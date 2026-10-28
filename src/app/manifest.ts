@@ -7,7 +7,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     name: STORE.name,
     short_name: STORE.shortName,
     description: STORE.tagline,
-    start_url: "/",
+    start_url: "/shop",
     display: "standalone",
     background_color: "#f4f7f5",
     theme_color: "#047857",

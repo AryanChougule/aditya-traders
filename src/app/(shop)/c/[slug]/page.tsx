@@ -4,15 +4,16 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { Scale } from "lucide-react";
+import { Pick, T } from "@/components/i18n";
 import { ProductGrid } from "@/components/shop/product-card";
 import { getCatalog, getCategories, getCategory } from "@/server/catalog";
 import { cn } from "@/lib/utils";
 
 const SORTS = [
-  { key: "popular", label: "Popular" },
-  { key: "price-asc", label: "Price: low to high" },
-  { key: "price-desc", label: "Price: high to low" },
-  { key: "discount", label: "Biggest discount" },
+  { key: "popular", label: "sort.popular" },
+  { key: "price-asc", label: "sort.priceAsc" },
+  { key: "price-desc", label: "sort.priceDesc" },
+  { key: "discount", label: "sort.discount" },
 ] as const;
 
 export async function generateStaticParams() {
@@ -59,16 +60,18 @@ async function Category(props: PageProps<"/c/[slug]">) {
               c.id === cat.id ? "bg-fg text-bg ring-fg" : "bg-surface text-fg ring-border hover:bg-surface-2",
             )}
           >
-            {c.name}
+            <Pick en={c.name} mr={c.nameMr} />
           </Link>
         ))}
       </nav>
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">{cat.name}</h1>
-          <p className="text-sm text-muted" lang="hi">
-            {cat.nameHi} · {items.length} items
+          <h1 className="text-2xl font-semibold">
+            <Pick en={cat.name} mr={cat.nameMr} />
+          </h1>
+          <p className="text-sm text-muted">
+            <T k="common.items" v={{ n: items.length }} />
           </p>
         </div>
         <nav aria-label="Sort" className="no-scrollbar -mx-4 flex max-w-[calc(100%+2rem)] gap-1.5 overflow-x-auto px-4 sm:mx-0 sm:px-0">
@@ -84,7 +87,7 @@ async function Category(props: PageProps<"/c/[slug]">) {
                 s.key === sort ? "bg-primary-soft text-primary" : "text-muted hover:bg-surface-2",
               )}
             >
-              {s.label}
+              <T k={s.label} />
             </Link>
           ))}
         </nav>
@@ -94,8 +97,7 @@ async function Category(props: PageProps<"/c/[slug]">) {
         <p className="flex items-start gap-2 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm text-fg">
           <Scale className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
           <span>
-            Loose items are priced per kg and weighed when we pack. Your final bill uses the exact weight (within ±10%), and any
-            difference goes back to your wallet.
+            <T k="category.looseNote" />
           </span>
         </p>
       ) : null}

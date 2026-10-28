@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Bill, type BillRow } from "@/components/shop/bill";
 import { OrderItems } from "@/components/shop/order-items";
 import { cancelOrderAction, resolveApprovalAction, retryPaymentAction } from "@/app/actions";
+import { useLang, useT } from "@/components/i18n";
 import { useSettings } from "@/components/providers";
 import { openGateway } from "@/components/shop/gateway";
 import { RepeatOrderButton } from "@/components/shop/repeat-order-button";
@@ -15,13 +16,15 @@ import { Tracker } from "@/components/shop/tracker";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { StatusPill } from "@/components/ui/pill";
+import { dayText, slotText, type Key, type Lang } from "@/lib/i18n";
 import { rupees } from "@/lib/money";
 import { STATUS_META, isCancellable } from "@/lib/order-flow";
 import { amountDue, itemBilled, itemEstimated } from "@/lib/pricing";
-import { slotDayLabel } from "@/lib/slots";
 import type { Order } from "@/lib/types";
 import { useNow } from "@/lib/use-now";
 import { clock, landmarkText } from "@/lib/utils";
+
+type TFn = ReturnType<typeof useT>;
 
 export function OrderView({
   order,
@@ -36,6 +39,8 @@ export function OrderView({
 }) {
   const router = useRouter();
   const STORE = useSettings();
+  const t = useT();
+  const lang = useLang();
   const [cancelling, setCancelling] = useState(false);
   const [paying, setPaying] = useState(false);
 
@@ -59,28 +64,26 @@ export function OrderView({
       <header className="grid gap-3 rounded-2xl bg-surface p-4 ring-1 ring-border sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <StatusPill status={order.status} audience="shopper" />
-          <span className="text-sm text-muted">
-            {order.number} · placed {clock(order.createdAt)}
-          </span>
+          <span className="text-sm text-muted">{t("order.placedAt", { n: order.number, time: clock(order.createdAt) })}</span>
         </div>
         <div>
-          <h1 className="text-2xl font-semibold">{headline(order)}</h1>
-          <p className="text-muted">{subline(order)}</p>
+          <h1 className="text-2xl font-semibold">{headline(order, t)}</h1>
+          <p className="text-muted">{subline(order, t, lang)}</p>
         </div>
         {!offPath ? <Tracker order={order} /> : null}
       </header>
 
       {order.status === "placed" ? (
-        <Callout tone="warn" icon={<CircleAlert className="size-5" />} title={order.paymentStatus === "failed" ? "Your payment didn't go through" : "Complete your payment"}>
-          <p>We're holding your items and slot for 15 minutes. No money was taken.</p>
+        <Callout tone="warn" icon={<CircleAlert className="size-5" />} title={order.paymentStatus === "failed" ? t("order.payFailed") : t("order.payPending")}>
+          <p>{t("order.holding")}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {canPay ? (
               <Button onClick={pay} disabled={paying}>
-                Pay {rupees(order.totalEstimated)}
+                {t("checkout.pay", { amount: rupees(order.totalEstimated) })}
               </Button>
             ) : null}
             <Button variant="ghost" onClick={() => setCancelling(true)}>
-              Cancel order
+              {t("order.cancel")}
             </Button>
           </div>
         </Callout>
@@ -92,8 +95,8 @@ export function OrderView({
 
       {order.status === "out_for_delivery" ? <RiderCard order={order} /> : null}
 
-      <section aria-label="Items" className="rounded-2xl bg-surface p-4 ring-1 ring-border sm:p-5">
-        <h2 className="mb-3 text-base font-semibold">Items</h2>
+      <section aria-label={t("order.items")} className="rounded-2xl bg-surface p-4 ring-1 ring-border sm:p-5">
+        <h2 className="mb-3 text-base font-semibold">{t("order.items")}</h2>
         <OrderItems order={order} />
       </section>
 
@@ -103,7 +106,7 @@ export function OrderView({
         <div className="flex gap-3">
           {order.mode === "delivery" ? <MapPin className="size-5 shrink-0 text-muted" aria-hidden /> : <Store className="size-5 shrink-0 text-muted" aria-hidden />}
           <div>
-            <p className="font-semibold">{order.mode === "delivery" ? "Delivering to" : "Pick up from"}</p>
+            <p className="font-semibold">{order.mode === "delivery" ? t("order.deliveringTo") : t("order.pickupFrom")}</p>
             {order.address ? (
               <p className="text-muted">
                 {order.address.line1}, {order.address.area}, {order.address.pincode}
@@ -117,9 +120,9 @@ export function OrderView({
         <div className="flex gap-3">
           <Phone className="size-5 shrink-0 text-muted" aria-hidden />
           <div>
-            <p className="font-semibold">Need help?</p>
+            <p className="font-semibold">{t("order.help")}</p>
             <p className="text-muted">
-              Call the store: <span className="select-all font-semibold text-fg">{STORE.phone}</span>
+              {t("footer.call")} <span className="select-all font-semibold text-fg">{STORE.phone}</span>
             </p>
           </div>
         </div>
@@ -128,61 +131,59 @@ export function OrderView({
       <div className="flex flex-wrap gap-2">
         {order.invoiceNumber ? (
           <ButtonLink href={`/orders/${order.id}/invoice`} variant="outline">
-            <FileText className="size-4" aria-hidden /> GST invoice
+            <FileText className="size-4" aria-hidden /> {t("order.invoice")}
           </ButtonLink>
         ) : null}
         {isCancellable(order.status) && order.status !== "placed" ? (
           <Button variant="ghost" onClick={() => setCancelling(true)} className="text-danger">
-            <X className="size-4" aria-hidden /> Cancel order
+            <X className="size-4" aria-hidden /> {t("order.cancel")}
           </Button>
         ) : null}
         {order.customer.id && order.status !== "placed" ? <RepeatOrderButton orderId={order.id} variant="ghost" /> : null}
       </div>
 
-      {meta.tone === "bad" && order.fulfilment.failReason ? (
-        <p className="text-sm text-muted">Reason from the rider: {order.fulfilment.failReason}</p>
-      ) : null}
+      {meta.tone === "bad" && order.fulfilment.failReason ? <p className="text-sm text-muted">{t("order.riderReason", { reason: order.fulfilment.failReason })}</p> : null}
 
       <CancelSheet order={order} open={cancelling} onOpenChange={setCancelling} />
     </div>
   );
 }
 
-function headline(o: Order) {
+function headline(o: Order, t: TFn) {
   switch (o.status) {
     case "out_for_delivery":
-      return "Your order is on the way";
+      return t("order.hOnWay");
     case "ready_for_pickup":
-      return "Ready at the counter";
+      return t("order.hReady");
     case "delivered":
-      return "Delivered. Enjoy!";
+      return t("order.hDelivered");
     case "picked_up":
-      return "Picked up. Thank you!";
+      return t("order.hPickedUp");
     default:
-      return STATUS_META[o.status].shopper;
+      return t(`status.${o.status}` as Key);
   }
 }
 
-function subline(o: Order) {
-  const when = `${slotDayLabel(o.slot)}, ${o.slot.label}`;
-  if (o.status === "cancelled") return "Any amount you paid has been refunded to your wallet.";
-  if (o.status === "delivery_failed") return "Our rider couldn't hand over your order. We'll call you to arrange another try.";
-  if (o.status === "returned") return "Your order came back to the store. Any amount paid is in your wallet.";
-  if (o.status === "delivered" || o.status === "picked_up") return `${o.items.filter((i) => i.status === "packed").length} items · ${rupees(o.totalFinal ?? o.totalEstimated)}`;
-  return o.mode === "delivery" ? `Delivery slot: ${when}` : `Pickup: ${slotDayLabel(o.slot)}, ${o.slot.label.toLowerCase()}`;
+function subline(o: Order, t: TFn, lang: Lang) {
+  const when = `${dayText(lang, o.slot)}, ${slotText(lang, o.slot)}`;
+  if (o.status === "cancelled") return t("order.sCancelled");
+  if (o.status === "delivery_failed") return t("order.sFailed");
+  if (o.status === "returned") return t("order.sReturned");
+  if (o.status === "delivered" || o.status === "picked_up")
+    return `${t("common.items", { n: o.items.filter((i) => i.status === "packed").length })} · ${rupees(o.totalFinal ?? o.totalEstimated)}`;
+  return o.mode === "delivery" ? t("order.sSlot", { when }) : t("order.sPickup", { when });
 }
 
 function PlacedBanner({ order }: { order: Order }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-primary p-4 text-primary-fg animate-sheet-up" role="status">
       <span className="grid size-12 shrink-0 place-items-center rounded-full bg-black/15 animate-pop">
         <CircleCheck className="size-7" aria-hidden />
       </span>
       <div>
-        <p className="font-display text-lg font-semibold">Order placed!</p>
-        <p className="text-sm opacity-90">
-          Order {order.number}. This page updates as we pack and send it. Keep the link, or find it under Orders.
-        </p>
+        <p className="font-display text-lg font-semibold">{t("order.placedTitle")}</p>
+        <p className="text-sm opacity-90">{t("order.placedBody", { n: order.number })}</p>
       </div>
     </div>
   );
@@ -211,17 +212,21 @@ function useMinutesLeft(since?: number) {
 }
 
 function ApprovalCard({ order }: { order: Order }) {
-
+  const t = useT();
   const awaiting = order.items.filter((i) => i.status === "awaiting");
   return (
-    <Callout tone="warn" icon={<CircleAlert className="size-5" />} title={awaiting.length > 1 ? `${awaiting.length} items are out of stock` : "An item is out of stock"}>
+    <Callout tone="warn" icon={<CircleAlert className="size-5" />} title={awaiting.length > 1 ? t("approve.titleMany", { n: awaiting.length }) : t("approve.titleOne")}>
       <ul className="mt-2 grid gap-3">
         {awaiting.map((i) => (
-          <ApprovalRow key={i.lineId} item={i} onDecide={async (d) => {
+          <ApprovalRow
+            key={i.lineId}
+            item={i}
+            onDecide={async (d) => {
               const r = await resolveApprovalAction(order.id, i.lineId, d);
-              if (r.ok) toast.success(d === "accept" ? "Replacement accepted" : "Item removed. We'll refund it.");
+              if (r.ok) toast.success(d === "accept" ? t("approve.accepted") : t("approve.removed"));
               else toast.error(r.error);
-            }} />
+            }}
+          />
         ))}
       </ul>
     </Callout>
@@ -229,51 +234,50 @@ function ApprovalCard({ order }: { order: Order }) {
 }
 
 function ApprovalRow({ item, onDecide }: { item: Order["items"][number]; onDecide: (d: "accept" | "remove") => void }) {
+  const t = useT();
   const left = useMinutesLeft(item.awaitingSince);
   const alt = item.proposed;
   return (
     <li className="rounded-xl bg-surface p-3 ring-1 ring-border">
       <p className="text-fg">
-        <b>{item.name}</b> isn't available.
-        {alt ? (
-          <>
-            {" "}
-            We can send <b>{alt.name}</b> ({alt.unitLabel}, {rupees(alt.price)}{alt.unitType === "weight" ? "/kg" : ""}) instead.
-          </>
-        ) : (
-          " We don't have a close replacement."
-        )}
+        {t("approve.unavailable", { name: item.name })}{" "}
+        {alt
+          ? t("approve.offer", { name: alt.name, unit: alt.unitLabel, price: `${rupees(alt.price)}${alt.unitType === "weight" ? "/kg" : ""}` })
+          : t("approve.noAlt")}
       </p>
       {alt ? (
         <div className="mt-2 flex items-center gap-3">
           <ProductArt icon={alt.icon} tint={alt.tint} className="w-12 rounded-lg" />
-          <span className="text-sm text-muted">Was {rupees(item.unitPrice)}{item.unitType === "weight" ? "/kg" : ""}</span>
+          <span className="text-sm text-muted">{t("approve.was", { price: `${rupees(item.unitPrice)}${item.unitType === "weight" ? "/kg" : ""}` })}</span>
         </div>
       ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {alt ? <Button size="sm" onClick={() => onDecide("accept")}>Accept replacement</Button> : null}
+        {alt ? (
+          <Button size="sm" onClick={() => onDecide("accept")}>
+            {t("approve.accept")}
+          </Button>
+        ) : null}
         <Button size="sm" variant="outline" onClick={() => onDecide("remove")}>
-          Remove item
+          {t("approve.remove")}
         </Button>
-        <span className="text-xs text-muted">No reply in {left} min removes it automatically.</span>
+        <span className="text-xs text-muted">{t("approve.timeout", { n: left })}</span>
       </div>
     </li>
   );
 }
 
 function CodeCard({ order }: { order: Order }) {
+  const t = useT();
   const show = ["packed", "out_for_delivery", "ready_for_pickup"].includes(order.status);
   if (!show) return null;
   const pickup = order.mode === "pickup";
   return (
-    <section aria-label="Handover code" className="flex items-center gap-4 rounded-2xl bg-surface p-4 ring-1 ring-border sm:p-5">
+    <section aria-label={pickup ? t("code.pickup") : t("code.delivery")} className="flex items-center gap-4 rounded-2xl bg-surface p-4 ring-1 ring-border sm:p-5">
       <div className="min-w-0 flex-1">
-        <h2 className="font-display text-base font-semibold">{pickup ? "Pickup code" : "Delivery code"}</h2>
-        <p className="text-sm text-muted">
-          {pickup ? "Show this at the counter to collect your order." : "Share this with the rider only after you have your bags."}
-        </p>
+        <h2 className="font-display text-base font-semibold">{pickup ? t("code.pickup") : t("code.delivery")}</h2>
+        <p className="text-sm text-muted">{pickup ? t("code.pickupHint") : t("code.deliveryHint")}</p>
       </div>
-      <p className="flex gap-1.5 font-display text-3xl font-bold tracking-[0.2em] tabular" aria-label={`Code ${order.fulfilment.code.split("").join(" ")}`}>
+      <p className="flex gap-1.5 font-display text-3xl font-bold tracking-[0.2em] tabular" aria-label={order.fulfilment.code.split("").join(" ")}>
         {order.fulfilment.code}
       </p>
     </section>
@@ -283,15 +287,16 @@ function CodeCard({ order }: { order: Order }) {
 function RiderCard({ order }: { order: Order }) {
   const f = order.fulfilment;
   const STORE = useSettings();
+  const t = useT();
   return (
-    <section aria-label="Delivery partner" className="flex items-center gap-3 rounded-2xl bg-surface p-4 ring-1 ring-border">
+    <section aria-label={t("rider.label")} className="flex items-center gap-3 rounded-2xl bg-surface p-4 ring-1 ring-border">
       <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
         <Bike className="size-5" aria-hidden />
       </span>
       <div className="min-w-0 flex-1 text-sm">
         {f.kind === "own" ? (
           <>
-            <p className="font-semibold">{f.riderName || "Our delivery staff"} from {STORE.name}</p>
+            <p className="font-semibold">{t("rider.from", { name: f.riderName || t("rider.ourStaff"), store: STORE.name })}</p>
             {f.riderPhone ? (
               <p className="text-muted">
                 <span className="select-all">{f.riderPhone}</span>
@@ -300,14 +305,14 @@ function RiderCard({ order }: { order: Order }) {
           </>
         ) : (
           <>
-            <p className="font-semibold">Delivered by {f.partnerName ?? "our delivery partner"}</p>
-            <p className="text-muted">Live tracking from the partner</p>
+            <p className="font-semibold">{t("rider.partner", { name: f.partnerName ?? t("rider.ourPartner") })}</p>
+            <p className="text-muted">{t("rider.partnerTracking")}</p>
           </>
         )}
       </div>
       {f.kind === "partner" && f.trackingUrl ? (
         <a href={f.trackingUrl} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center gap-1.5 rounded-xl px-3 font-bold text-primary hover:bg-primary-soft">
-          Track <ExternalLink className="size-4" aria-hidden />
+          {t("rider.track")} <ExternalLink className="size-4" aria-hidden />
         </a>
       ) : null}
     </section>
@@ -315,36 +320,30 @@ function RiderCard({ order }: { order: Order }) {
 }
 
 function OrderBill({ order, due }: { order: Order; due: number }) {
+  const t = useT();
   const final = order.totalFinal !== undefined;
   const items = order.items.reduce((s, i) => s + (final ? itemBilled(i) : itemEstimated(i)), 0);
   const rows: BillRow[] = [
-    { label: final ? "Items (as packed)" : "Items (estimated)", value: items },
-    { label: order.mode === "pickup" ? "Pickup" : "Delivery", value: order.deliveryFee === 0 ? "Free" : order.deliveryFee, tone: order.deliveryFee === 0 ? "save" : undefined },
+    { label: final ? t("bill.itemsPacked") : t("bill.itemsEst"), value: items },
+    { label: order.mode === "pickup" ? t("bill.pickup") : t("bill.delivery"), value: order.deliveryFee === 0 ? t("common.free") : order.deliveryFee, tone: order.deliveryFee === 0 ? "save" : undefined },
   ];
-  if (order.walletUsed) rows.push({ label: "Paid from wallet", value: -order.walletUsed, tone: "save" });
-  if (final && order.totalFinal !== order.totalEstimated) rows.push({ label: "You were charged at checkout", value: order.totalEstimated, tone: "muted" });
+  if (order.walletUsed) rows.push({ label: t("bill.paidWallet"), value: -order.walletUsed, tone: "save" });
+  if (final && order.totalFinal !== order.totalEstimated) rows.push({ label: t("bill.chargedAtCheckout"), value: order.totalEstimated, tone: "muted" });
 
   const adj = order.adjustment;
   return (
     <div className="grid gap-2">
-      <Bill rows={rows} total={order.totalFinal ?? order.totalEstimated} totalLabel={final ? "Final bill" : "Estimated total"} />
+      <Bill rows={rows} total={order.totalFinal ?? order.totalEstimated} totalLabel={final ? t("bill.final") : t("bill.estimated")} />
       {adj?.credited ? (
         <p className="flex items-center gap-2 rounded-xl bg-primary-soft px-3.5 py-2.5 text-sm">
           <Wallet className="size-4 shrink-0 text-primary" aria-hidden />
-          <span>
-            <b className="tabular">{rupees(adj.credited)}</b> added to your wallet because the final bill was lower. It's used automatically
-            on your next order.
-          </span>
+          <span>{t("bill.credited", { amount: rupees(adj.credited) })}</span>
         </p>
       ) : null}
-      {adj?.absorbed ? (
-        <p className="rounded-xl bg-surface-2 px-3.5 py-2.5 text-sm text-muted">
-          Your items weighed a little more. We've covered the extra <span className="tabular">{rupees(adj.absorbed)}</span>.
-        </p>
-      ) : null}
+      {adj?.absorbed ? <p className="rounded-xl bg-surface-2 px-3.5 py-2.5 text-sm text-muted">{t("bill.absorbed", { amount: rupees(adj.absorbed) })}</p> : null}
       {due > 0 && !["delivered", "picked_up", "cancelled", "returned"].includes(order.status) ? (
         <p className="flex items-center justify-between gap-3 rounded-xl bg-accent-soft px-3.5 py-2.5 text-sm">
-          <span>{order.paymentStatus === "cod_due" ? (order.mode === "pickup" ? "Pay at the counter" : "Pay on delivery (cash or UPI)") : "Balance to pay on delivery"}</span>
+          <span>{order.paymentStatus === "cod_due" ? (order.mode === "pickup" ? t("checkout.payCounter") : t("bill.payOnDelivery")) : t("bill.balanceOnDelivery")}</span>
           <b className="font-display text-base tabular">{rupees(due)}</b>
         </p>
       ) : null}
@@ -352,43 +351,45 @@ function OrderBill({ order, due }: { order: Order; due: number }) {
   );
 }
 
-function CancelSheet({ order, open, onOpenChange }: { order: Order; open: boolean; onOpenChange: (v: boolean) => void }) {
+const REASONS: Key[] = ["cancel.r1", "cancel.r2", "cancel.r3", "cancel.r4"];
 
-  const reasons = ["Ordered by mistake", "Need to change items", "Delivery slot doesn't suit me", "Found it elsewhere"];
-  const [reason, setReason] = useState(reasons[0]);
+function CancelSheet({ order, open, onOpenChange }: { order: Order; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const t = useT();
+  const [reason, setReason] = useState<Key>(REASONS[0]);
   const refund = (order.paymentStatus === "paid" ? order.totalEstimated : 0) + order.walletUsed;
   return (
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
-      title={`Cancel ${order.number}?`}
-      description={refund ? `${rupees(refund)} will go back to your wallet straight away.` : "Nothing has been charged."}
+      title={t("cancel.title", { n: order.number })}
+      description={refund ? t("cancel.refund", { amount: rupees(refund) }) : t("cancel.nothingCharged")}
       footer={
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Keep order
+            {t("cancel.keep")}
           </Button>
           <Button
             variant="danger"
             onClick={async () => {
-              const r = await cancelOrderAction(order.id, reason);
+              // the store reads reasons in English, whatever language the shopper chose
+              const r = await cancelOrderAction(order.id, t(reason, undefined, "en"));
               if (r.ok) {
-                toast.success("Order cancelled");
+                toast.success(t("cancel.done"));
                 onOpenChange(false);
               } else toast.error(r.error);
             }}
           >
-            Cancel order
+            {t("order.cancel")}
           </Button>
         </div>
       }
     >
       <fieldset className="grid gap-2">
-        <legend className="mb-2 text-sm font-semibold">Why are you cancelling?</legend>
-        {reasons.map((r) => (
+        <legend className="mb-2 text-sm font-semibold">{t("cancel.why")}</legend>
+        {REASONS.map((r) => (
           <label key={r} className="flex h-12 cursor-pointer items-center gap-3 rounded-xl px-3 ring-1 ring-border has-[:checked]:bg-primary-soft has-[:checked]:ring-2 has-[:checked]:ring-primary">
             <input type="radio" name="cancel-reason" value={r} checked={reason === r} onChange={() => setReason(r)} className="size-4 accent-[var(--primary)]" />
-            {r}
+            {t(r)}
           </label>
         ))}
       </fieldset>

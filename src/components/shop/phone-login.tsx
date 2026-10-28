@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import type { ConfirmationResult } from "@firebase/auth";
 import { KeyRound, LoaderCircle, ShieldCheck } from "lucide-react";
 import { updateProfileAction } from "@/app/actions";
+import { useT } from "@/components/i18n";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { confirmOtp, firebaseEnabled, otpErrorMessage, sendOtp } from "@/lib/firebase-client";
@@ -21,6 +22,7 @@ export function PhoneLogin({ onDone }: { onDone?: () => void }) {
   const [err, setErr] = useState<string>();
   const [busy, setBusy] = useState(false);
   const confirmation = useRef<ConfirmationResult | null>(null);
+  const t = useT();
 
   const digits = phone.replace(/\D/g, "").replace(/^(91|0)(?=\d{10}$)/, "");
   const pretty = `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
@@ -31,7 +33,7 @@ export function PhoneLogin({ onDone }: { onDone?: () => void }) {
   };
 
   const send = async () => {
-    if (!/^[6-9]\d{9}$/.test(digits)) return setErr("Enter a 10-digit mobile number starting with 6, 7, 8 or 9");
+    if (!/^[6-9]\d{9}$/.test(digits)) return setErr(t("login.errPhone"));
     setErr(undefined);
     if (!firebaseEnabled) return setStep("code");
     setBusy(true);
@@ -39,25 +41,25 @@ export function PhoneLogin({ onDone }: { onDone?: () => void }) {
       confirmation.current = await sendOtp(`+91${digits}`, "send-code");
       setStep("code");
     } catch (e) {
-      setErr(otpErrorMessage(e));
+      setErr(t(otpErrorMessage(e)));
     } finally {
       setBusy(false);
     }
   };
 
   const verify = async () => {
-    if (!/^\d{6}$/.test(code) && !(!firebaseEnabled && /^\d{4}$/.test(code))) return setErr("Enter the code from the SMS");
+    if (!/^\d{6}$/.test(code) && !(!firebaseEnabled && /^\d{4}$/.test(code))) return setErr(t("login.errCode"));
     setBusy(true);
     setErr(undefined);
     try {
       const body = firebaseEnabled ? { idToken: await confirmOtp(confirmation.current!, code) } : { devPhone: digits, devCode: code };
       const res = await fetch("/api/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = (await res.json()) as { ok?: boolean; needsName?: boolean; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "We couldn't log you in. Please try again.");
+      if (!res.ok) throw new Error(res.status === 401 ? t("login.wrongCode") : res.status === 429 ? t("login.tooMany") : (data.error ?? t("login.failed")));
       if (data.needsName) setStep("name");
       else finish();
     } catch (e) {
-      setErr((e as { code?: string }).code ? otpErrorMessage(e) : (e as Error).message);
+      setErr((e as { code?: string }).code ? t(otpErrorMessage(e)) : (e as Error).message);
     } finally {
       setBusy(false);
     }
@@ -82,7 +84,7 @@ export function PhoneLogin({ onDone }: { onDone?: () => void }) {
       >
         <Field
           id="phone"
-          label="Mobile number"
+          label={t("login.mobile")}
           prefix="+91"
           inputMode="numeric"
           autoComplete="tel-national"
@@ -91,10 +93,10 @@ export function PhoneLogin({ onDone }: { onDone?: () => void }) {
           onChange={(e) => setPhone(e.target.value.replace(/[^\d ]/g, ""))}
           placeholder="98765 43210"
           error={err}
-          hint="We'll send a one-time code by SMS. No password needed."
+          hint={t("login.mobileHint")}
         />
         <Button id="send-code" type="submit" disabled={busy} className="w-full sm:w-auto sm:justify-self-start">
-          {busy ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <KeyRound className="size-4" aria-hidden />} Send code
+          {busy ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : <KeyRound className="size-4" aria-hidden />} {t("login.send")}
         </Button>
       </form>
     );
@@ -109,7 +111,7 @@ export function PhoneLogin({ onDone }: { onDone?: () => void }) {
         }}
       >
         <p className="text-sm">
-          Code sent to <b className="tabular">{pretty}</b>{" "}
+          {t("login.sentTo")} <b className="tabular">{pretty}</b>{" "}
           <button
             type="button"
             onClick={() => {
@@ -119,17 +121,17 @@ export function PhoneLogin({ onDone }: { onDone?: () => void }) {
             }}
             className="cursor-pointer font-bold text-primary underline-offset-2 hover:underline"
           >
-            Change
+            {t("common.change")}
           </button>
         </p>
         {!firebaseEnabled ? (
           <p className="flex items-center gap-2 rounded-lg bg-info-soft px-3 py-2 text-sm text-info">
-            <ShieldCheck className="size-4 shrink-0" aria-hidden /> Developer test mode: use code <b className="tabular">1234</b>. Real SMS turns on with Firebase.
+            <ShieldCheck className="size-4 shrink-0" aria-hidden /> {t("login.devMode")} <b className="tabular">1234</b>
           </p>
         ) : null}
         <Field
           id="otp"
-          label={firebaseEnabled ? "6-digit code" : "Code"}
+          label={firebaseEnabled ? t("login.code6") : t("login.code")}
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
@@ -139,7 +141,7 @@ export function PhoneLogin({ onDone }: { onDone?: () => void }) {
           className="max-w-xs tabular"
         />
         <Button type="submit" disabled={busy} className="w-full sm:w-auto sm:justify-self-start">
-          {busy ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null} Verify and continue
+          {busy ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : null} {t("login.verify")}
         </Button>
       </form>
     );
@@ -152,10 +154,10 @@ export function PhoneLogin({ onDone }: { onDone?: () => void }) {
         saveName();
       }}
     >
-      <p className="text-sm text-muted">Welcome! What should our delivery staff call you?</p>
-      <Field id="name" label="Your name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} error={err} placeholder="e.g. Sunita Deshmukh" className="max-w-sm" />
+      <p className="text-sm text-muted">{t("login.welcome")}</p>
+      <Field id="name" label={t("login.yourName")} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} error={err} placeholder={t("login.namePlaceholder")} className="max-w-sm" />
       <Button type="submit" disabled={busy || name.trim().length < 2} className="w-full sm:w-auto sm:justify-self-start">
-        Continue
+        {t("common.continue")}
       </Button>
     </form>
   );

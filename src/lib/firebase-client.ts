@@ -1,6 +1,7 @@
 "use client";
 
 import type { ConfirmationResult } from "@firebase/auth";
+import type { Key } from "./i18n";
 
 /*
  * Firebase only sends and checks the SMS code. The server then verifies the resulting ID token and issues
@@ -50,13 +51,13 @@ export async function confirmOtp(confirmation: ConfirmationResult, code: string)
   return token;
 }
 
-/** Firebase error codes → something a shopper can act on. */
-export function otpErrorMessage(e: unknown): string {
+/** Firebase error codes → a message key the shopper can act on. */
+export function otpErrorMessage(e: unknown): Key {
   const code = (e as { code?: string })?.code ?? "";
-  if (code.includes("invalid-verification-code")) return "That code isn't right. Check the SMS and try again.";
-  if (code.includes("code-expired")) return "That code has expired. Request a new one.";
-  if (code.includes("too-many-requests")) return "Too many attempts from this phone. Please wait a while and try again.";
-  if (code.includes("invalid-phone-number")) return "That doesn't look like a valid mobile number.";
-  if (code.includes("quota-exceeded")) return "We can't send SMS right now. Please call the store to place your order.";
-  return "We couldn't send or check the code. Please try again.";
+  if (code.includes("invalid-verification-code")) return "login.wrongCode";
+  if (code.includes("code-expired")) return "login.expired";
+  if (code.includes("too-many-requests")) return "login.tooMany";
+  if (code.includes("invalid-phone-number")) return "login.errPhone";
+  if (code.includes("quota-exceeded")) return "login.quota";
+  return "login.failed";
 }

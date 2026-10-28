@@ -2,6 +2,7 @@
 
 import { Minus, Plus } from "lucide-react";
 import { DEFAULT_WEIGHT, WEIGHT_STEP } from "@/lib/catalog";
+import { pick, useLang, useT } from "@/components/i18n";
 import { useCart, useCartQty, useHydrated } from "@/lib/cart-store";
 import { grams } from "@/lib/money";
 import type { LiveProduct } from "@/lib/types";
@@ -18,13 +19,15 @@ export function AddControl({ product, size = "md", className }: { product: LiveP
   const loose = product.unitType === "weight";
   const max = loose ? MAX_GRAMS : Math.max(1, Math.min(MAX_PIECES, product.stockLeft));
   const h = size === "lg" ? "h-12" : "h-11";
+  const t = useT();
+  const name = pick(useLang(), product.name, product.nameMr);
 
   if (!hydrated) return <div className={cn(h, "w-full rounded-xl bg-surface-2", className)} aria-hidden />;
 
   if (!product.available)
     return (
       <div className={cn(h, "grid w-full place-items-center rounded-xl border border-dashed border-border text-sm font-semibold text-muted", className)}>
-        Out of stock
+        {t("product.outOfStock")}
       </div>
     );
 
@@ -33,7 +36,7 @@ export function AddControl({ product, size = "md", className }: { product: LiveP
       <button
         type="button"
         onClick={() => setQty(product, loose ? DEFAULT_WEIGHT : 1)}
-        aria-label={`Add ${product.name} to cart`}
+        aria-label={t("product.addAria", { name })}
         className={cn(
           h,
           "inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-primary bg-surface font-bold text-primary transition-[background-color,transform] duration-150 hover:bg-primary-soft active:scale-[0.97]",
@@ -42,7 +45,7 @@ export function AddControl({ product, size = "md", className }: { product: LiveP
         )}
       >
         <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-        Add
+        {t("product.add")}
       </button>
     );
 
@@ -52,12 +55,12 @@ export function AddControl({ product, size = "md", className }: { product: LiveP
     <div
       className={cn(h, "flex w-full items-center justify-between rounded-xl bg-primary text-primary-fg animate-pop", className)}
       role="group"
-      aria-label={`${product.name} quantity`}
+      aria-label={t("product.qtyAria", { name })}
     >
       <button
         type="button"
         onClick={() => setQty(product, removing ? 0 : qty - step)}
-        aria-label={removing ? `Remove ${product.name}` : `Decrease ${product.name}`}
+        aria-label={removing ? t("product.removeAria", { name }) : t("product.decreaseAria", { name })}
         className="grid h-full w-11 shrink-0 cursor-pointer place-items-center rounded-l-xl transition-colors hover:bg-black/10 active:bg-black/20"
       >
         <Minus className="size-4" strokeWidth={2.5} aria-hidden />
@@ -69,7 +72,7 @@ export function AddControl({ product, size = "md", className }: { product: LiveP
         type="button"
         onClick={() => setQty(product, Math.min(qty + step, max))}
         disabled={qty >= max}
-        aria-label={`Increase ${product.name}`}
+        aria-label={t("product.increaseAria", { name })}
         className="grid h-full w-11 shrink-0 cursor-pointer place-items-center rounded-r-xl transition-colors hover:bg-black/10 active:bg-black/20 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Plus className="size-4" strokeWidth={2.5} aria-hidden />

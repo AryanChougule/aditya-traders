@@ -142,7 +142,7 @@ export const STAFF_ROLES: Role[] = ["owner", "packer", "rider"];
 /** For pages: signed-in staff with one of the roles, otherwise off to login or the shop. */
 export async function requireStaff(next: string, roles: Role[] = STAFF_ROLES): Promise<SessionUser> {
   const user = await requireUser(next);
-  if (!roles.includes(user.role)) redirect("/?denied=1");
+  if (!roles.includes(user.role)) redirect("/shop?denied=1");
   return user;
 }
 

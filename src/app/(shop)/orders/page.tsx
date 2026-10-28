@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { T } from "@/components/i18n";
 import { PhoneLogin } from "@/components/shop/phone-login";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { getCurrentUser } from "@/server/auth";
@@ -21,9 +22,13 @@ async function Orders() {
   if (!user)
     return (
       <div className="mx-auto grid max-w-md gap-4">
-        <h1 className="text-2xl font-semibold">Your orders</h1>
+        <h1 className="text-2xl font-semibold">
+          <T k="orders.title" />
+        </h1>
         <div className="rounded-2xl bg-surface p-5 ring-1 ring-border">
-          <p className="mb-4 text-muted">Log in with your mobile number to see and track your orders.</p>
+          <p className="mb-4 text-muted">
+            <T k="orders.loginPrompt" />
+          </p>
           <PhoneLogin />
         </div>
       </div>
