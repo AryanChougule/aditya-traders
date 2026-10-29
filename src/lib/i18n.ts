@@ -302,6 +302,7 @@ const en = {
   "login.tooMany": "Too many attempts. Please wait a while and try again.",
   "login.quota": "We can't send SMS right now. Please call the store to place your order.",
   "login.failed": "We couldn't log you in. Please try again.",
+  "login.notReady": "SMS login isn't working right now. Please call the store to place your order.",
 
   // orders
   "orders.title": "Your orders",
@@ -691,6 +692,7 @@ const mr: Partial<Record<Key, string>> = {
   "login.tooMany": "खूप वेळा प्रयत्न झाले. थोड्या वेळाने परत try करा.",
   "login.quota": "सध्या SMS पाठवता येत नाहीत. Order साठी दुकानाला call करा.",
   "login.failed": "Login झालं नाही. परत try करा.",
+  "login.notReady": "SMS login सध्या चालू नाही. Order साठी दुकानाला call करा.",
 
   "orders.title": "तुमच्या orders",
   "orders.loginPrompt": "Orders पाहण्यासाठी आणि track करण्यासाठी mobile number ने login करा.",

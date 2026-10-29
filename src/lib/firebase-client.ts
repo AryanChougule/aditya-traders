@@ -59,5 +59,11 @@ export function otpErrorMessage(e: unknown): Key {
   if (code.includes("too-many-requests")) return "login.tooMany";
   if (code.includes("invalid-phone-number")) return "login.errPhone";
   if (code.includes("quota-exceeded")) return "login.quota";
+  // the store's Firebase setup, not the shopper: billing off, Phone sign-in off, or this domain not authorised
+  if (/billing-not-enabled|operation-not-allowed|unauthorized-domain|captcha-check-failed|invalid-app-credential/.test(code)) {
+    console.error(`Firebase phone login is not set up correctly: ${code}`);
+    return "login.notReady";
+  }
+  if (code) console.error(`Firebase phone login failed: ${code}`);
   return "login.failed";
 }
