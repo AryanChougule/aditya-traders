@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
@@ -9,7 +9,8 @@ import { cache } from "react";
 import { getDb, schema } from "./db";
 
 export type Role = "customer" | "owner" | "packer" | "rider";
-export type SessionUser = { id: string; phone: string; name: string; role: Role; subPref: "similar" | "ask" | "remove" };
+/** `phone` is display-formatted ("+91 98765 43210"), or "" until the shopper adds one at checkout. */
+export type SessionUser = { id: string; phone: string; email: string; name: string; role: Role; subPref: "similar" | "ask" | "remove" };
 
 const COOKIE = "at_session";
 const SESSION_DAYS = 60;
@@ -22,7 +23,7 @@ export function normalizePhone(input: string): string | null {
   return /^[6-9]\d{9}$/.test(digits) ? `+91${digits}` : null;
 }
 
-export const displayPhone = (e164: string) => `+91 ${e164.slice(3, 8)} ${e164.slice(8)}`;
+export const displayPhone = (e164: string | null) => (e164?.startsWith("+91") ? `+91 ${e164.slice(3, 8)} ${e164.slice(8)}` : "");
 
 /* ---------- Firebase ID token verification (no service account needed) ---------- */
 
@@ -34,8 +35,10 @@ export function firebaseConfigured() {
   return Boolean(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID && process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
 }
 
-/** Verifies a Firebase phone-auth ID token and returns the verified phone number. */
-export async function verifyFirebaseIdToken(idToken: string): Promise<string> {
+export type GoogleIdentity = { uid: string; email: string; name: string };
+
+/** Verifies a Firebase ID token from Google sign-in and returns who it is. Only Google accounts with a verified email pass. */
+export async function verifyFirebaseIdToken(idToken: string): Promise<GoogleIdentity> {
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   if (!projectId) throw new Error("Firebase is not configured");
   const { payload } = await jwtVerify(idToken, firebaseJwks, {
@@ -43,9 +46,11 @@ export async function verifyFirebaseIdToken(idToken: string): Promise<string> {
     audience: projectId,
     algorithms: ["RS256"],
   });
-  const phone = typeof payload.phone_number === "string" ? normalizePhone(payload.phone_number) : null;
-  if (!phone) throw new Error("This sign-in has no Indian mobile number attached");
-  return phone;
+  const provider = (payload.firebase as { sign_in_provider?: string } | undefined)?.sign_in_provider;
+  if (provider !== "google.com" || payload.email_verified !== true || typeof payload.email !== "string" || !payload.sub) {
+    throw new Error("Only Google sign-in with a verified email is accepted");
+  }
+  return { uid: payload.sub, email: payload.email.toLowerCase(), name: typeof payload.name === "string" ? payload.name : "" };
 }
 
 /** Test login (code 1234) exists only on a developer's machine, never in a production build. */
@@ -54,6 +59,41 @@ export function devLoginAllowed() {
 }
 
 /* ---------- users and sessions ---------- */
+
+function ownerEmails(): Set<string> {
+  return new Set(
+    (process.env.OWNER_EMAILS ?? "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
+
+/**
+ * Finds the user for a Google account: by uid, else a not-yet-linked row with the same email (staff the owner
+ * added by Gmail), else a new customer. Configured owner emails are promoted.
+ */
+export async function upsertGoogleUser(g: GoogleIdentity) {
+  const db = await getDb();
+  const isOwner = ownerEmails().has(g.email);
+  const [byUid] = await db.select().from(schema.users).where(eq(schema.users.googleUid, g.uid));
+  const [byEmail] = byUid ? [] : await db.select().from(schema.users).where(and(eq(schema.users.email, g.email), isNull(schema.users.googleUid)));
+  const existing = byUid ?? byEmail;
+  if (existing) {
+    const patch: Partial<typeof schema.users.$inferInsert> = {};
+    if (!existing.googleUid) patch.googleUid = g.uid;
+    if (existing.email !== g.email) patch.email = g.email;
+    if (!existing.name && g.name) patch.name = g.name.slice(0, 60);
+    if (isOwner && existing.role !== "owner") patch.role = "owner";
+    if (Object.keys(patch).length) await db.update(schema.users).set(patch).where(eq(schema.users.id, existing.id));
+    return { ...existing, ...patch };
+  }
+  const [created] = await db
+    .insert(schema.users)
+    .values({ googleUid: g.uid, email: g.email, name: g.name.slice(0, 60), role: isOwner ? "owner" : "customer" })
+    .returning();
+  return created;
+}
 
 function ownerPhones(): Set<string> {
   return new Set(
@@ -64,11 +104,11 @@ function ownerPhones(): Set<string> {
   );
 }
 
-/** Finds or creates the user for a verified phone, promoting configured owner numbers. */
+/** Test login only (no Firebase on a developer's machine): finds or creates the user for a phone, promoting owner numbers. */
 export async function upsertUser(phone: string, name?: string) {
   const db = await getDb();
   const clean = name?.trim().slice(0, 60);
-  const [existing] = await db.select().from(schema.users).where(eq(schema.users.phone, phone));
+  const [existing] = await db.select().from(schema.users).where(and(eq(schema.users.phone, phone), isNull(schema.users.googleUid)));
   const isOwner = ownerPhones().has(phone);
   if (existing) {
     const patch: Partial<typeof schema.users.$inferInsert> = {};
@@ -119,6 +159,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     .select({
       id: schema.users.id,
       phone: schema.users.phone,
+      email: schema.users.email,
       name: schema.users.name,
       role: schema.users.role,
       subPref: schema.users.subPref,
@@ -128,7 +169,7 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
     .innerJoin(schema.users, eq(schema.sessions.userId, schema.users.id))
     .where(and(eq(schema.sessions.id, hash(token)), gt(schema.sessions.expiresAt, new Date())));
   if (!row || row.disabled) return null;
-  return { id: row.id, phone: displayPhone(row.phone), name: row.name, role: row.role, subPref: row.subPref };
+  return { id: row.id, phone: displayPhone(row.phone), email: row.email ?? "", name: row.name, role: row.role, subPref: row.subPref };
 });
 
 export async function requireUser(next: string): Promise<SessionUser> {

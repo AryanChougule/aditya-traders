@@ -15,6 +15,13 @@
       "when": 1793197682741,
       "tag": "0001_marathi_names",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793284132725,
+      "tag": "0002_google_login",
+      "breakpoints": true
     }
   ]
 }

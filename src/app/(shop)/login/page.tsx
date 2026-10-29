@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { T } from "@/components/i18n";
-import { PhoneLogin } from "@/components/shop/phone-login";
+import { Login } from "@/components/shop/login";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { getCurrentUser } from "@/server/auth";
 
@@ -11,12 +11,12 @@ export const metadata: Metadata = { title: "Log in", robots: { index: false } };
 export default function LoginPage(props: PageProps<"/login">) {
   return (
     <Suspense fallback={<PageSkeleton className="mx-auto max-w-md" />}>
-      <Login {...props} />
+      <LoginContent {...props} />
     </Suspense>
   );
 }
 
-async function Login(props: PageProps<"/login">) {
+async function LoginContent(props: PageProps<"/login">) {
   const { next } = await props.searchParams;
   // only same-site paths, so the login page can't be used to bounce people to another website
   const dest = typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : "/shop";
@@ -27,7 +27,7 @@ async function Login(props: PageProps<"/login">) {
         <T k="login.title" />
       </h1>
       <div className="rounded-2xl bg-surface p-5 ring-1 ring-border">
-        <PhoneLogin />
+        <Login />
       </div>
     </div>
   );

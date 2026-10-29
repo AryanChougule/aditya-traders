@@ -212,6 +212,7 @@ export async function placeOrder(user: SessionUser, input: PlaceOrderInput): Pro
   const settings = await getSettings();
   if (!settings.acceptingOrders) throw new ActionError("The store isn't taking online orders right now. Please try again later or call the store.");
   if (input.paymentMethod !== "cod" && !settings.onlinePayments) throw new ActionError("Online payment isn't available yet. Please choose cash or UPI on delivery.");
+  if (!user.phone) throw new ActionError("Add your mobile number first, so the store and rider can reach you.");
   const db = await getDb();
 
   const id = await db.transaction(async (tx) => {

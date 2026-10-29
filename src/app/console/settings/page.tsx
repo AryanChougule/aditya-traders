@@ -31,7 +31,7 @@ async function Settings() {
       initial={settings}
       gatewayReady={gatewayReady}
       meId={me.id}
-      staff={staff.map((u) => ({ id: u.id, name: u.name, phone: displayPhone(u.phone), role: u.role }))}
+      staff={staff.map((u) => ({ id: u.id, name: u.name, email: u.email ?? "", phone: displayPhone(u.phone), role: u.role }))}
     />
   );
 }

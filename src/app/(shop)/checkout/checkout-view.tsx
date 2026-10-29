@@ -10,7 +10,7 @@ import { useLang, useT } from "@/components/i18n";
 import { useSettings } from "@/components/providers";
 import { Bill } from "@/components/shop/bill";
 import { openGateway } from "@/components/shop/gateway";
-import { PhoneLogin } from "@/components/shop/phone-login";
+import { Login } from "@/components/shop/login";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Switch } from "@/components/ui/field";
 import { cartQuote, useCart, useHydrated } from "@/lib/cart-store";
@@ -98,7 +98,10 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
   const codBlocked = q.total > settings.codLimit;
   const missing: Key[] = [];
   if (!customer) missing.push("checkout.missingLogin");
-  else if (!customer.name) missing.push("checkout.missingName");
+  else {
+    if (!customer.name) missing.push("checkout.missingName");
+    if (!customer.phone) missing.push("checkout.missingPhone");
+  }
   if (mode === "delivery" && !address) missing.push("checkout.missingAddress");
   if (!slot) missing.push(mode === "delivery" ? "checkout.missingSlot" : "checkout.missingPickup");
   if (!settings.acceptingOrders) missing.push("checkout.missingOpen");
@@ -137,15 +140,15 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
       <div className="grid gap-4">
         <h1 className="text-2xl font-semibold">{t("cart.checkout")}</h1>
 
-        <Step n={1} title={t("checkout.details")} done={!!customer}>
+        <Step n={1} title={t("checkout.details")} done={!!customer?.name && !!customer.phone}>
           {customer ? (
             <div className="flex items-center justify-between gap-3">
-              {customer.name ? (
+              {customer.name && customer.phone ? (
                 <p>
                   <b>{customer.name}</b> <span className="text-muted tabular">· {customer.phone}</span>
                 </p>
               ) : (
-                <NameForm phone={customer.phone} />
+                <ContactForm needName={!customer.name} needPhone={!customer.phone} />
               )}
               <Button
                 variant="ghost"
@@ -159,7 +162,7 @@ export function CheckoutView({ data }: { data: CheckoutData }) {
               </Button>
             </div>
           ) : (
-            <PhoneLogin />
+            <Login />
           )}
         </Step>
 
@@ -418,26 +421,44 @@ function SlotPicker({
   );
 }
 
-/** For a customer who verified their number but never gave a name (the rider needs one). */
-function NameForm({ phone }: { phone: string }) {
+/** Google gives us a name (usually) but never a phone: the rider needs both, once. */
+function ContactForm({ needName, needPhone }: { needName: boolean; needPhone: boolean }) {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const t = useT();
+  const digits = phone.replace(/\D/g, "");
+  const ready = (!needName || name.trim().length >= 2) && (!needPhone || digits.length >= 10);
   return (
     <form
-      className="flex flex-1 flex-wrap items-end gap-2"
+      className="grid flex-1 gap-2 sm:flex sm:flex-wrap sm:items-end"
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
-        const r = await updateProfileAction({ name });
+        const r = await updateProfileAction({ ...(needName ? { name } : {}), ...(needPhone ? { phone } : {}) });
         setBusy(false);
         if (!r.ok) return toast.error(r.error);
         router.refresh();
       }}
     >
-      <Field id="checkout-name" label={t("checkout.yourName", { phone })} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className="min-w-48 flex-1" />
-      <Button type="submit" disabled={busy || name.trim().length < 2} className="h-12">
+      {needName ? <Field id="checkout-name" label={t("login.yourName")} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} className="min-w-48 flex-1" /> : null}
+      {needPhone ? (
+        <Field
+          id="checkout-phone"
+          label={t("checkout.mobile")}
+          prefix="+91"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          maxLength={14}
+          value={phone}
+          onChange={(e) => setPhone(e.target.value.replace(/[^\d ]/g, ""))}
+          placeholder="98765 43210"
+          hint={t("checkout.contactHint")}
+          className="min-w-48 flex-1"
+        />
+      ) : null}
+      <Button type="submit" disabled={busy || !ready} className="h-12">
         {t("common.save")}
       </Button>
     </form>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { T } from "@/components/i18n";
-import { PhoneLogin } from "@/components/shop/phone-login";
+import { Login } from "@/components/shop/login";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { getCurrentUser } from "@/server/auth";
 import { listCustomerOrders } from "@/server/orders";
@@ -29,7 +29,7 @@ async function Orders() {
           <p className="mb-4 text-muted">
             <T k="orders.loginPrompt" />
           </p>
-          <PhoneLogin />
+          <Login />
         </div>
       </div>
     );

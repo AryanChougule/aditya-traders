@@ -17,18 +17,21 @@ daily backups, and cash/UPI-on-delivery payments. Online payments switch on late
 
 Neon's free plan includes point-in-time restore for recent history. Check the current limits on their pricing page.
 
-## 2. SMS login — Firebase (15 minutes)
+## 2. Login — Google sign-in through Firebase (10 minutes, free)
+
+Customers and staff log in with the Google account already on their phone: no SMS, no passwords, and it works on
+Firebase's free Spark plan (no card needed). The mobile number the rider calls is asked for once, at checkout.
 
 1. Go to **console.firebase.google.com** and create a project. Google Analytics isn't needed.
-2. **Build → Authentication → Get started → Sign-in method → Phone → Enable.**
-3. **Authentication → Settings:**
-   - **Authorized domains:** add `yourdomain.in` and `www.yourdomain.in` (your real domain), and your `*.vercel.app` address.
-   - **SMS region policy:** choose *Allow* and select only **India**. This blocks SMS-fraud traffic from other countries,
-     which would otherwise run up your bill.
-4. **Project settings (gear icon) → General → Your apps → Web (`</>`)**: register an app, then copy `apiKey`, `authDomain`,
-   `projectId` and `appId`.
-5. Firebase may ask you to move to the pay-as-you-go **Blaze** plan before it sends SMS. If it does, set a budget alert
-   (for example ₹500 a month) in Google Cloud Billing. Check Firebase's pricing page for the current per-SMS cost in India.
+2. **Security → Authentication → Get started → Sign-in method → Google → Enable.** Pick a support email (yours) and save.
+3. **Authentication → Settings → Authorized domains:** add `yourdomain.in` and `www.yourdomain.in` (your real domain), and
+   your `*.vercel.app` address. `localhost` is there already.
+4. **Settings (gear) → Project settings → General → Your apps → Web (`</>`)**: register an app (leave Firebase Hosting
+   unticked), then copy `apiKey`, `authDomain`, `projectId` and `appId`.
+5. Put your own Gmail in `OWNER_EMAILS` (step 3). Add staff later in **Console → Settings → Staff** by their Gmail.
+
+Note: Google's sign-in doesn't open inside some in-app browsers (Instagram, Facebook). The site tells those customers to
+open the link in Chrome. Links shared on WhatsApp open in Chrome on Android, so they're fine.
 
 ## 3. Hosting — Vercel (15 minutes)
 
@@ -40,7 +43,7 @@ Neon's free plan includes point-in-time restore for recent history. Check the cu
    |---|---|
    | `DATABASE_URL` | Neon connection string from step 1 |
    | `NEXT_PUBLIC_SITE_URL` | `https://www.yourdomain.in` |
-   | `OWNER_PHONES` | Owner's mobile, e.g. `+919876543210` (comma-separate if more than one) |
+   | `OWNER_EMAILS` | Owner's Gmail, e.g. `owner@gmail.com` (comma-separate if more than one) |
    | `NEXT_PUBLIC_FIREBASE_API_KEY` | from step 2 |
    | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | from step 2 |
    | `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | from step 2 |
@@ -69,7 +72,7 @@ Neon's free plan includes point-in-time restore for recent history. Check the cu
 
 ## 5. Set up the store (20 minutes)
 
-1. Open `https://www.yourdomain.in/login` and log in with the owner's mobile (the number in `OWNER_PHONES`).
+1. Open `https://www.yourdomain.in/login` and tap **Continue with Google** with the owner's Gmail (the one in `OWNER_EMAILS`).
 2. Go to **/console → Settings** and fill in:
    - The real shop address, phone number, GSTIN (or choose *Composition*), and state.
    - Opening hours, orders per slot, the pincodes you deliver to with their rough distance, and the fees.

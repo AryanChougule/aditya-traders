@@ -151,12 +151,16 @@ export async function deleteAddressAction(addressId: string) {
   });
 }
 
-export async function updateProfileAction(input: { name?: string; subPref?: "similar" | "ask" | "remove" }) {
+export async function updateProfileAction(input: { name?: string; phone?: string; subPref?: "similar" | "ask" | "remove" }) {
   return run(async () => {
     const user = await assertRole(ANY);
-    const p = z.object({ name: z.string().trim().min(2, "Please enter your name").max(60).optional(), subPref: z.enum(["similar", "ask", "remove"]).optional() }).parse(input);
+    const p = z
+      .object({ name: z.string().trim().min(2, "Please enter your name").max(60).optional(), phone: z.string().max(20).optional(), subPref: z.enum(["similar", "ask", "remove"]).optional() })
+      .parse(input);
+    const phone = p.phone === undefined ? undefined : normalizePhone(p.phone);
+    if (phone === null) throw new ActionError("Enter a 10-digit Indian mobile number.");
     const db = await getDb();
-    await db.update(schema.users).set(p).where(eq(schema.users.id, user.id));
+    await db.update(schema.users).set({ ...p, phone }).where(eq(schema.users.id, user.id));
   });
 }
 
@@ -168,7 +172,7 @@ export async function deleteAccountAction() {
     await db.transaction(async (tx) => {
       await tx.delete(schema.addresses).where(eq(schema.addresses.userId, user.id));
       await tx.update(schema.orders).set({ customerName: "Deleted customer", address: null }).where(eq(schema.orders.userId, user.id));
-      await tx.update(schema.users).set({ name: "", disabled: true, phone: `deleted-${user.id}` }).where(eq(schema.users.id, user.id));
+      await tx.update(schema.users).set({ name: "", disabled: true, phone: null, email: null, googleUid: null }).where(eq(schema.users.id, user.id));
       await tx.delete(schema.sessions).where(eq(schema.sessions.userId, user.id));
     });
   });
@@ -490,20 +494,40 @@ export async function saveSettingsAction(data: unknown) {
   );
 }
 
-export async function saveStaffAction(input: { phone: string; name: string; role: "owner" | "packer" | "rider" | "customer" }) {
+/** Staff are identified by the Gmail they log in with; the owner can add them before their first login. */
+export async function saveStaffAction(input: { email: string; name: string; phone?: string; role: "owner" | "packer" | "rider" | "customer" }) {
   return run(async () => {
     const actor = await assertRole(["owner"]);
-    const p = z.object({ phone: z.string(), name: z.string().trim().min(2, "Enter their name").max(60), role: z.enum(["owner", "packer", "rider", "customer"]) }).parse(input);
-    const phone = normalizePhone(p.phone);
-    if (!phone) throw new ActionError("Enter a 10-digit Indian mobile number.");
+    const p = z
+      .object({
+        email: z.string().trim().toLowerCase().email("Enter the Gmail address they log in with"),
+        name: z.string().trim().min(2, "Enter their name").max(60),
+        phone: z.string().max(20).optional(),
+        role: z.enum(["owner", "packer", "rider", "customer"]),
+      })
+      .parse(input);
+    // riders need a number customers can call; for others it's optional
+    const phone = p.phone ? normalizePhone(p.phone) : undefined;
+    if (phone === null) throw new ActionError("Enter a 10-digit Indian mobile number, or leave it empty.");
     const db = await getDb();
-    const [self] = await db.select({ phone: schema.users.phone }).from(schema.users).where(eq(schema.users.id, actor.id));
-    if (self?.phone === phone && p.role !== "owner") throw new ActionError("You can't remove your own owner access.");
-    const [existing] = await db.select().from(schema.users).where(eq(schema.users.phone, phone));
-    if (existing) await db.update(schema.users).set({ role: p.role, name: existing.name || p.name }).where(eq(schema.users.id, existing.id));
-    else await db.insert(schema.users).values({ phone, name: p.name, role: p.role });
+    const [existing] = await db.select().from(schema.users).where(eq(schema.users.email, p.email));
+    if (existing?.id === actor.id && p.role !== "owner") throw new ActionError("You can't remove your own owner access.");
+    if (existing) await db.update(schema.users).set({ role: p.role, name: existing.name || p.name, ...(phone ? { phone } : {}) }).where(eq(schema.users.id, existing.id));
+    else await db.insert(schema.users).values({ email: p.email, name: p.name, phone: phone ?? null, role: p.role });
     if (p.role === "customer" && existing) await db.delete(schema.sessions).where(eq(schema.sessions.userId, existing.id));
-    await audit(actor, "staff.save", phone, { role: p.role });
+    await audit(actor, "staff.save", p.email, { role: p.role });
+  });
+}
+
+export async function setStaffRoleAction(input: { userId: string; role: "owner" | "packer" | "rider" | "customer" }) {
+  return run(async () => {
+    const actor = await assertRole(["owner"]);
+    const p = z.object({ userId: z.string().uuid(), role: z.enum(["owner", "packer", "rider", "customer"]) }).parse(input);
+    if (p.userId === actor.id && p.role !== "owner") throw new ActionError("You can't remove your own owner access.");
+    const db = await getDb();
+    await db.update(schema.users).set({ role: p.role }).where(eq(schema.users.id, p.userId));
+    if (p.role === "customer") await db.delete(schema.sessions).where(eq(schema.sessions.userId, p.userId));
+    await audit(actor, "staff.role", p.userId, { role: p.role });
   });
 }
 

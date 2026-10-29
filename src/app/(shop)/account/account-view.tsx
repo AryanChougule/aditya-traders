@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { deleteAccountAction, deleteAddressAction, setDefaultAddressAction, updateProfileAction } from "@/app/actions";
 import { useLang, useT } from "@/components/i18n";
 import { useSettings } from "@/components/providers";
-import { PhoneLogin } from "@/components/shop/phone-login";
+import { Login } from "@/components/shop/login";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { rupees } from "@/lib/money";
@@ -22,7 +22,7 @@ const PREFS: { key: SubPref; label: Key; icon: React.ReactNode }[] = [
   { key: "remove", label: "sub.remove", icon: <Trash2 className="size-4" /> },
 ];
 
-type User = { name: string; phone: string; role: string; subPref: SubPref };
+type User = { name: string; phone: string; email: string; role: string; subPref: SubPref };
 
 export function AccountView({
   user,
@@ -63,7 +63,7 @@ export function AccountView({
           </span>
           <div className="min-w-0 flex-1">
             <p className="font-semibold">{user.name || t("account.noName")}</p>
-            <p className="text-sm text-muted tabular">{user.phone}</p>
+            <p className="truncate text-sm text-muted">{[user.email, user.phone].filter(Boolean).join(" · ")}</p>
           </div>
           <Button variant="ghost" size="sm" onClick={logout}>
             <LogOut className="size-4" aria-hidden /> {t("account.logout")}
@@ -72,7 +72,7 @@ export function AccountView({
       ) : (
         <section className="rounded-2xl bg-surface p-5 ring-1 ring-border">
           <p className="mb-4 text-muted">{t("account.loginPrompt")}</p>
-          <PhoneLogin />
+          <Login />
         </section>
       )}
 

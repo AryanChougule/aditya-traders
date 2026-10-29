@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { Plus, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { saveSettingsAction, saveStaffAction } from "@/app/actions";
+import { saveSettingsAction, saveStaffAction, setStaffRoleAction } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Field, Switch } from "@/components/ui/field";
 import { Pill } from "@/components/ui/pill";
 import type { StoreSettings } from "@/lib/settings";
 
-type Staff = { id: string; name: string; phone: string; role: "customer" | "owner" | "packer" | "rider" };
+type Staff = { id: string; name: string; email: string; phone: string; role: "customer" | "owner" | "packer" | "rider" };
 
 const rs = (p: number) => String(p / 100);
 const ps = (r: string) => Math.round(Number(r || 0) * 100);
@@ -183,19 +183,22 @@ function ToggleRow({ label, hint, checked, onChange, disabled }: { label: string
 const ROLE_LABEL = { owner: "Owner", packer: "Packer", rider: "Rider", customer: "No access" } as const;
 
 function StaffCard({ staff, meId }: { staff: Staff[]; meId: string }) {
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<Staff["role"]>("packer");
 
-  const save = async (p: { phone: string; name: string; role: Staff["role"] }, done: string) => {
-    const r = await saveStaffAction(p);
+  const report = (r: { ok: boolean; error?: string }, done: string) => {
     if (r.ok) toast.success(done);
     else toast.error(r.error);
     return r.ok;
   };
 
   return (
-    <Card title="Staff" sub="Staff log in with their own mobile number, the same way customers do. Packers can pack and update stock; riders see only their drops; owners see everything.">
+    <Card
+      title="Staff"
+      sub="Staff log in with their own Google account, the same way customers do. Add them by the Gmail address on their phone. Packers can pack and update stock; riders see only their drops; owners see everything. Give riders a mobile number: customers see it to call them."
+    >
       <ul className="divide-y divide-border">
         {staff.map((u) => (
           <li key={u.id} className="flex flex-wrap items-center gap-3 py-2.5">
@@ -203,14 +206,14 @@ function StaffCard({ staff, meId }: { staff: Staff[]; meId: string }) {
               <span className="block font-semibold">
                 {u.name || "No name yet"} {u.id === meId ? <Pill>You</Pill> : null}
               </span>
-              <span className="block text-sm text-muted tabular">{u.phone}</span>
+              <span className="block text-sm text-muted">{[u.email, u.phone].filter(Boolean).join(" · ") || "No contact yet"}</span>
             </span>
             <select
-              aria-label={`Role for ${u.name || u.phone}`}
+              aria-label={`Role for ${u.name || u.email}`}
               className="h-10 rounded-lg border border-border bg-surface px-2 text-sm"
               value={u.role}
               disabled={u.id === meId}
-              onChange={(e) => save({ phone: u.phone, name: u.name || "Staff", role: e.target.value as Staff["role"] }, "Role updated")}
+              onChange={async (e) => report(await setStaffRoleAction({ userId: u.id, role: e.target.value as Staff["role"] }), "Role updated")}
             >
               {(["owner", "packer", "rider", "customer"] as const).map((r) => (
                 <option key={r} value={r}>
@@ -222,17 +225,19 @@ function StaffCard({ staff, meId }: { staff: Staff[]; meId: string }) {
         ))}
       </ul>
       <form
-        className="grid gap-2 rounded-xl bg-surface-2/60 p-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end"
+        className="grid gap-2 rounded-xl bg-surface-2/60 p-3 sm:grid-cols-2 lg:grid-cols-[1fr_1.3fr_1fr_auto_auto] lg:items-end"
         onSubmit={async (e) => {
           e.preventDefault();
-          if (await save({ phone, name, role }, `${name} added as ${ROLE_LABEL[role].toLowerCase()}`)) {
+          if (report(await saveStaffAction({ email, name, phone, role }), `${name} added as ${ROLE_LABEL[role].toLowerCase()}`)) {
+            setEmail("");
             setPhone("");
             setName("");
           }
         }}
       >
         <Field id="sf-name" label="Name" value={name} onChange={(e) => setName(e.target.value)} />
-        <Field id="sf-phone" label="Mobile number" prefix="+91" inputMode="numeric" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        <Field id="sf-email" label="Gmail address" type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@gmail.com" />
+        <Field id="sf-phone" label={role === "rider" ? "Mobile number" : "Mobile (optional)"} prefix="+91" inputMode="numeric" value={phone} onChange={(e) => setPhone(e.target.value)} />
         <label className="grid gap-1.5 text-sm font-semibold">
           Role
           <select className="h-12 rounded-xl border border-border bg-surface px-3 text-base" value={role} onChange={(e) => setRole(e.target.value as Staff["role"])}>

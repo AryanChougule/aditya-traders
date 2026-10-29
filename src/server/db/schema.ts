@@ -11,7 +11,12 @@ const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull(
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
-  phone: text("phone").notNull().unique(),
+  /** Google account (Firebase uid): how customers and staff log in */
+  googleUid: text("google_uid").unique(),
+  /** lower-cased; lets the owner add staff by Gmail before their first login */
+  email: text("email").unique(),
+  /** contact number for the rider, typed at checkout; not a login and not unique (families share one) */
+  phone: text("phone"),
   name: text("name").notNull().default(""),
   role: text("role", { enum: ["customer", "owner", "packer", "rider"] }).notNull().default("customer"),
   subPref: text("sub_pref", { enum: ["similar", "ask", "remove"] }).notNull().default("similar"),
