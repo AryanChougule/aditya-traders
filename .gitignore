@@ -45,3 +45,4 @@ next-env.d.ts
 
 # embedded development database
 /.data
+.neon

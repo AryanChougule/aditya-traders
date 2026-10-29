@@ -12,7 +12,8 @@ import * as schema from "../src/server/db/schema";
 import { seed } from "../src/server/db/seed";
 
 async function main() {
-  const url = process.env.DATABASE_URL;
+  // migrations go over the direct connection: DDL and session state don't belong behind the pooler
+  const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not set");
   neonConfig.webSocketConstructor = ws;
   const pool = new Pool({ connectionString: url });
