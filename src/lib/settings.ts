@@ -13,12 +13,15 @@ export const settingsSchema = z.object({
   phone: z.string().min(8).max(20),
   /** shown on invoices; empty until the owner adds it */
   gstin: z.string().max(15),
-  /** composition-scheme stores issue a bill of supply instead of a tax invoice */
-  gstScheme: z.enum(["regular", "composition"]),
+  /** composition-scheme stores issue a bill of supply instead of a tax invoice; unregistered stores a plain bill */
+  gstScheme: z.enum(["regular", "composition", "unregistered"]),
   stateName: z.string().max(40),
   stateCode: z.string().max(2),
   opensAt: z.number().int().min(0).max(23),
   closesAt: z.number().int().min(1).max(24),
+  /** closed in between, e.g. 13 → 16 for an afternoon break; 0 and 0 means open straight through */
+  breakStart: z.number().int().min(0).max(24).default(0),
+  breakEnd: z.number().int().min(0).max(24).default(0),
   /** pincode → approximate distance from the store in km */
   serviceable: z.record(z.string().regex(/^\d{6}$/), z.number().min(0).max(30)),
   minOrder: z.number().int().min(0),
@@ -64,6 +67,8 @@ export const DEFAULT_SETTINGS: StoreSettings = {
   stateCode: "27",
   opensAt: 8,
   closesAt: 21,
+  breakStart: 0,
+  breakEnd: 0,
   serviceable: { "411001": 1.5, "411002": 2.5, "411011": 3.5, "411042": 4.5 },
   minOrder: 19900,
   freeDeliveryAt: 49900,
@@ -94,6 +99,19 @@ export const DEFAULT_SETTINGS: StoreSettings = {
     endsOn: "2026-11-12",
   },
 };
+
+type Hours = Pick<StoreSettings, "opensAt" | "closesAt" | "breakStart" | "breakEnd">;
+
+/** The day's opening sessions as [from, to) hours: one, or two around the break. */
+export function openRanges(s: Hours): [number, number][] {
+  const hasBreak = s.breakStart > s.opensAt && s.breakEnd > s.breakStart && s.breakEnd < s.closesAt;
+  return hasBreak
+    ? [
+        [s.opensAt, s.breakStart],
+        [s.breakEnd, s.closesAt],
+      ]
+    : [[s.opensAt, s.closesAt]];
+}
 
 /** The announcement if it should be showing today (IST), otherwise null. */
 export function activeAnnouncement(s: StoreSettings, todayKey: string) {

@@ -10,7 +10,7 @@ import { useSettings } from "@/components/providers";
 import { hourLabel, type Key } from "@/lib/i18n";
 import { cartQuote, useCart, useHydrated } from "@/lib/cart-store";
 import { rupees } from "@/lib/money";
-import { isStoreOpen } from "@/lib/slots";
+import { storeClock } from "@/lib/slots";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
 
@@ -26,9 +26,7 @@ function DeliverTo() {
   return (
     <Link href="/account#addresses" className="flex min-w-0 items-center gap-1.5 rounded-lg py-1 text-left text-sm hover:text-primary">
       <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
-      <span className="min-w-0 truncate font-semibold">
-        {s.acceptingOrders ? t("chrome.deliverWithin", { km: farthest || 5 }) : t("chrome.paused")}
-      </span>
+      <span className="min-w-0 truncate font-semibold">{s.acceptingOrders ? t("chrome.deliverWithin", { km: farthest || 5 }) : t("chrome.paused")}</span>
       <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
     </Link>
   );
@@ -40,7 +38,8 @@ export function StoreStatus({ className, audience = "shopper" }: { className?: s
   const lang = useLang();
   const t = useT();
   if (!now) return <span className={cn("inline-block h-5 w-40 rounded bg-surface-2", className)} aria-hidden />;
-  const open = isStoreOpen(s, now);
+  const c = storeClock(s, now);
+  const open = c.open;
   const h = (x: number) => hourLabel(lang, x);
   return (
     <span className={cn("inline-flex items-center gap-1.5 text-sm", className)}>
@@ -48,7 +47,11 @@ export function StoreStatus({ className, audience = "shopper" }: { className?: s
       <b className="font-bold">{open ? t("chrome.openNow") : t("chrome.closed")}</b>
       <span className="text-muted">
         <Clock className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />
-        {open ? t("chrome.until", { time: h(s.closesAt) }) : audience === "store" ? t("chrome.opens", { time: h(s.opensAt) }) : t("chrome.opensOrderNow", { time: h(s.opensAt) })}
+        {c.open
+          ? t("chrome.until", { time: h(c.until) })
+          : audience === "store" || !c.tomorrow
+            ? t("chrome.opens", { time: h(c.opensAt) })
+            : t("chrome.opensOrderNow", { time: h(c.opensAt) })}
       </span>
     </span>
   );
@@ -86,7 +89,10 @@ function ShopHeaderView({ pathname }: { pathname: string }) {
           <ShoppingCart className="size-5" aria-hidden />
           <span className="hidden tabular sm:inline">{hydrated && itemCount ? rupees(total) : t("nav.cart")}</span>
           {hydrated && itemCount ? (
-            <span key={itemCount} className="absolute -right-1.5 -top-1.5 grid min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-bold text-white animate-pop dark:text-[#2a1d00] sm:hidden">
+            <span
+              key={itemCount}
+              className="absolute -right-1.5 -top-1.5 grid min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-bold text-white animate-pop dark:text-[#2a1d00] sm:hidden"
+            >
               {itemCount}
             </span>
           ) : null}
@@ -127,10 +133,7 @@ function BottomNavView({ pathname }: { pathname: string }) {
   const t = useT();
   if (pathname.startsWith("/checkout")) return null;
   return (
-    <nav
-      aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
-    >
+    <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
       <ul className="mx-auto grid max-w-md grid-cols-5">
         {TABS.map(({ href, label, icon: I, match }) => {
           const active = match(pathname);
@@ -139,10 +142,7 @@ function BottomNavView({ pathname }: { pathname: string }) {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors",
-                  active ? "text-primary" : "text-muted hover:text-fg",
-                )}
+                className={cn("flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors", active ? "text-primary" : "text-muted hover:text-fg")}
               >
                 <span className={cn("grid h-7 w-12 place-items-center rounded-full transition-colors", active && "bg-primary-soft")}>
                   <I className="size-5" strokeWidth={active ? 2.4 : 2} aria-hidden />

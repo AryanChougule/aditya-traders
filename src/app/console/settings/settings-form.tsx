@@ -79,6 +79,7 @@ export function SettingsForm({ initial, gatewayReady, staff, meId }: { initial: 
             <select className="h-12 rounded-xl border border-border bg-surface px-3 text-base" value={s.gstScheme} onChange={(e) => set("gstScheme", e.target.value as StoreSettings["gstScheme"])}>
               <option value="regular">Regular (tax invoice)</option>
               <option value="composition">Composition (bill of supply)</option>
+              <option value="unregistered">Not registered (plain bill, no GST)</option>
             </select>
           </label>
           <Field id="st-gstin" label="GSTIN" value={s.gstin} onChange={(e) => set("gstin", e.target.value.toUpperCase())} maxLength={15} placeholder="27ABCDE1234F1Z5" />
@@ -89,10 +90,12 @@ export function SettingsForm({ initial, gatewayReady, staff, meId }: { initial: 
         </div>
       </Card>
 
-      <Card title="Hours and slots">
+      <Card title="Hours and slots" sub="Hours in 24-hour time: 8 = 8 am, 13 = 1 pm, 22 = 10 pm. For an afternoon break, e.g. closed 1 pm – 4 pm, enter 13 and 16; use 0 and 0 for no break. No delivery slots are offered during the break.">
         <div className="grid gap-3 sm:grid-cols-4">
           <Field id="st-open" label="Opens (hour, 24h)" inputMode="numeric" value={String(s.opensAt)} onChange={(e) => set("opensAt", Number(e.target.value) || 0)} />
           <Field id="st-close" label="Closes (hour, 24h)" inputMode="numeric" value={String(s.closesAt)} onChange={(e) => set("closesAt", Number(e.target.value) || 0)} />
+          <Field id="st-bstart" label="Break from (hour)" inputMode="numeric" value={String(s.breakStart)} onChange={(e) => set("breakStart", Number(e.target.value) || 0)} />
+          <Field id="st-bend" label="Break until (hour)" inputMode="numeric" value={String(s.breakEnd)} onChange={(e) => set("breakEnd", Number(e.target.value) || 0)} />
           <Field id="st-cap" label="Orders per 2-hour slot" inputMode="numeric" value={String(s.slotCapacity)} onChange={(e) => set("slotCapacity", Number(e.target.value) || 1)} />
           <Field id="st-cut" label="Slot cut-off (minutes)" inputMode="numeric" value={String(s.slotCutoffMinutes)} onChange={(e) => set("slotCutoffMinutes", Number(e.target.value) || 0)} />
         </div>

@@ -1,4 +1,4 @@
-import type { StoreSettings } from "./settings";
+import { openRanges, type StoreSettings } from "./settings";
 import type { Slot } from "./types";
 
 /*
@@ -35,7 +35,7 @@ const hourLabel = (h: number) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? "am" 
 export type SlotOption = Slot & { booked: number; capacity: number; closed: boolean; reason?: string };
 export type SlotDay = { day: string; dateKey: string; slots: SlotOption[] };
 
-type Hours = Pick<StoreSettings, "opensAt" | "closesAt" | "slotCapacity" | "slotCutoffMinutes">;
+type Hours = Pick<StoreSettings, "opensAt" | "closesAt" | "breakStart" | "breakEnd" | "slotCapacity" | "slotCutoffMinutes">;
 
 /** Two-hour delivery windows for today and tomorrow. `booked` maps slot id → orders already in it. */
 export function deliverySlots(s: Hours, booked: Record<string, number>, now = Date.now()): SlotDay[] {
@@ -44,51 +44,54 @@ export function deliverySlots(s: Hours, booked: Record<string, number>, now = Da
     const base = ist(istStartOfDay(now) + d * DAY);
     const key = istDateKey(istStartOfDay(now) + d * DAY);
     const slots: SlotOption[] = [];
-    for (let h = s.opensAt + 1; h + 2 <= s.closesAt; h += 2) {
-      const start = istInstant(base.y, base.m, base.d, h);
-      const id = `${key}-${h}`;
-      const n = booked[id] ?? 0;
-      const past = now > start - s.slotCutoffMinutes * 60_000;
-      const full = n >= s.slotCapacity;
-      slots.push({
-        id,
-        date: key,
-        label: `${hourLabel(h)} – ${hourLabel(h + 2)}`,
-        start,
-        end: start + 2 * HOUR,
-        booked: n,
-        capacity: s.slotCapacity,
-        closed: past || full,
-        reason: past ? "Closed" : full ? "Full" : undefined,
-      });
-    }
+    // the first hour of each session is for packing, so delivery windows start an hour after opening
+    for (const [from, to] of openRanges(s))
+      for (let h = from + 1; h + 2 <= to; h += 2) {
+        const start = istInstant(base.y, base.m, base.d, h);
+        const id = `${key}-${h}`;
+        const n = booked[id] ?? 0;
+        const past = now > start - s.slotCutoffMinutes * 60_000;
+        const full = n >= s.slotCapacity;
+        slots.push({
+          id,
+          date: key,
+          label: `${hourLabel(h)} – ${hourLabel(h + 2)}`,
+          start,
+          end: start + 2 * HOUR,
+          booked: n,
+          capacity: s.slotCapacity,
+          closed: past || full,
+          reason: past ? "Closed" : full ? "Full" : undefined,
+        });
+      }
     out.push({ day: d === 0 ? "Today" : "Tomorrow", dateKey: key, slots });
   }
   return out;
 }
 
 /** Pickup "ready by" times: hourly, at least an hour from now, until an hour before closing. */
-export function pickupSlots(s: Pick<StoreSettings, "opensAt" | "closesAt">, now = Date.now()): SlotDay[] {
+export function pickupSlots(s: Pick<StoreSettings, "opensAt" | "closesAt" | "breakStart" | "breakEnd">, now = Date.now()): SlotDay[] {
   const out: SlotDay[] = [];
   for (let d = 0; d < 2; d++) {
     const base = ist(istStartOfDay(now) + d * DAY);
     const key = istDateKey(istStartOfDay(now) + d * DAY);
     const slots: SlotOption[] = [];
-    for (let h = s.opensAt + 1; h <= s.closesAt - 1; h++) {
-      const start = istInstant(base.y, base.m, base.d, h);
-      const closed = start - HOUR < now;
-      slots.push({
-        id: `pickup-${key}-${h}`,
-        date: key,
-        label: `Ready by ${hourLabel(h)}`,
-        start,
-        end: start + HOUR,
-        booked: 0,
-        capacity: 999,
-        closed,
-        reason: closed ? "Closed" : undefined,
-      });
-    }
+    for (const [from, to] of openRanges(s))
+      for (let h = from + 1; h <= to - 1; h++) {
+        const start = istInstant(base.y, base.m, base.d, h);
+        const closed = start - HOUR < now;
+        slots.push({
+          id: `pickup-${key}-${h}`,
+          date: key,
+          label: `Ready by ${hourLabel(h)}`,
+          start,
+          end: start + HOUR,
+          booked: 0,
+          capacity: 999,
+          closed,
+          reason: closed ? "Closed" : undefined,
+        });
+      }
     out.push({ day: d === 0 ? "Today" : "Tomorrow", dateKey: key, slots });
   }
   return out;
@@ -100,9 +103,19 @@ export function slotFromId(s: Hours, id: string, booked: Record<string, number>,
   return all.flatMap((d) => d.slots).find((x) => x.id === id);
 }
 
-export function isStoreOpen(s: Pick<StoreSettings, "opensAt" | "closesAt">, now = Date.now()) {
+export function isStoreOpen(s: Pick<StoreSettings, "opensAt" | "closesAt" | "breakStart" | "breakEnd">, now = Date.now()) {
   const h = ist(now).h;
-  return h >= s.opensAt && h < s.closesAt;
+  return openRanges(s).some(([from, to]) => h >= from && h < to);
+}
+
+/** For the open/closed badge: when the current session ends, or when the store next opens (later today, or tomorrow). */
+export function storeClock(s: Pick<StoreSettings, "opensAt" | "closesAt" | "breakStart" | "breakEnd">, now = Date.now()) {
+  const h = ist(now).h;
+  const ranges = openRanges(s);
+  const current = ranges.find(([from, to]) => h >= from && h < to);
+  if (current) return { open: true as const, until: current[1] };
+  const later = ranges.find(([from]) => from > h);
+  return later ? { open: false as const, opensAt: later[0], tomorrow: false } : { open: false as const, opensAt: ranges[0][0], tomorrow: true };
 }
 
 export function slotDayLabel(slot: Slot, now = Date.now()) {

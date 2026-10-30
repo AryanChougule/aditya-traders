@@ -484,6 +484,8 @@ export async function saveSettingsAction(data: unknown) {
       const actor = await assertRole(["owner"]);
       const s = settingsSchema.parse(data);
       if (s.closesAt <= s.opensAt) throw new ActionError("Closing time must be after opening time.");
+      if ((s.breakStart || s.breakEnd) && !(s.opensAt < s.breakStart && s.breakStart < s.breakEnd && s.breakEnd < s.closesAt))
+        throw new ActionError("The break must start after opening, end after it starts, and finish before closing. Use 0 and 0 for no break.");
       if (s.onlinePayments && !(await gatewayEnabled({ ignoreSetting: true })))
         throw new ActionError("Add your Razorpay keys in Vercel before turning on online payments.");
       const db = await getDb();

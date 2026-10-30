@@ -1,3 +1,4 @@
+import { openRanges, type StoreSettings } from "./settings";
 import { ist, istDateKey } from "./slots";
 import type { Slot } from "./types";
 
@@ -66,7 +67,7 @@ const en = {
   "landing.whyTitle": "Why order from us",
   "landing.areaTitle": "Where we deliver",
   "landing.areaBody": "Pincodes {list}. Anywhere else, order online and pick up at the store.",
-  "landing.hours": "Open {open} – {close}, every day",
+  "landing.hours": "Open {hours}, every day",
   "landing.ctaTitle": "Your usual list, ready in two hours",
   "landing.ctaBody": "Minimum order {min}. Free delivery above {free}.",
   "landing.endsOn": "Till {date}",
@@ -412,7 +413,7 @@ const en = {
   "account.removeAddress": "Remove address",
   "account.noAddress": "You'll add an address at checkout.",
   "account.prefBody": "Your default. You can change it on each order.",
-  "account.hours": "open {open} – {close}",
+  "account.hours": "open {hours}",
   "account.delete": "Delete my account",
   "account.deleteTitle": "Delete your account?",
   "account.deleteBody": "We'll remove your name, phone number and addresses, and log you out. Past invoices are kept without your details, as tax law requires. Any wallet balance is lost.",
@@ -471,7 +472,7 @@ const mr: Partial<Record<Key, string>> = {
   "landing.whyTitle": "आमच्याकडून order का करावी",
   "landing.areaTitle": "आम्ही कुठे delivery करतो",
   "landing.areaBody": "Pincodes {list}. इतर ठिकाणी, online order करून दुकानातून pickup करा.",
-  "landing.hours": "रोज {open} – {close} उघडं",
+  "landing.hours": "रोज {hours} उघडं",
   "landing.ctaTitle": "तुमची नेहमीची list, दोन तासांत ready",
   "landing.ctaBody": "Minimum order {min}. {free} वर free delivery.",
   "landing.endsOn": "{date} पर्यंत",
@@ -808,7 +809,7 @@ const mr: Partial<Record<Key, string>> = {
   "account.removeAddress": "Address काढा",
   "account.noAddress": "Checkout ला address add कराल.",
   "account.prefBody": "हे default आहे. प्रत्येक order ला बदलता येईल.",
-  "account.hours": "{open} – {close} उघडं",
+  "account.hours": "{hours} उघडं",
   "account.delete": "माझं account delete करा",
   "account.deleteTitle": "Account delete करायचं?",
   "account.deleteBody": "तुमचं नाव, phone number आणि addresses काढून टाकू आणि logout करू. कायद्याप्रमाणे जुने invoices तुमच्या माहितीशिवाय ठेवले जातील. Wallet मधले पैसे जातील.",
@@ -824,6 +825,13 @@ export function translate(lang: Lang, key: Key, vars?: Vars): string {
 }
 
 /** "9 am" or "सकाळी 9": Marathi names the part of the day instead of am/pm. */
+/** "8 am – 1 pm, 4 pm – 10 pm" / "सकाळी 8 – दुपारी 1, संध्याकाळी 4 – रात्री 10" */
+export function hoursText(lang: Lang, s: Pick<StoreSettings, "opensAt" | "closesAt" | "breakStart" | "breakEnd">): string {
+  return openRanges(s)
+    .map(([from, to]) => `${hourLabel(lang, from)} – ${hourLabel(lang, to)}`)
+    .join(", ");
+}
+
 export function hourLabel(lang: Lang, h: number): string {
   const n = h % 12 || 12;
   if (lang === "en") return `${n} ${h < 12 ? "am" : "pm"}`;

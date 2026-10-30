@@ -12,7 +12,7 @@ import { Login } from "@/components/shop/login";
 import { Button } from "@/components/ui/button";
 import { Sheet } from "@/components/ui/sheet";
 import { rupees } from "@/lib/money";
-import { hourLabel, type Key } from "@/lib/i18n";
+import { hoursText, type Key } from "@/lib/i18n";
 import type { Address, LedgerEntry, SubPref } from "@/lib/types";
 import { cn, dayLabel } from "@/lib/utils";
 
@@ -164,7 +164,7 @@ export function AccountView({
       ) : null}
 
       <section aria-label="Store" className="divide-y divide-border rounded-2xl bg-surface ring-1 ring-border">
-        <Row icon={<Store className="size-5" />} title={s.name} sub={`${s.address} · ${t("account.hours", { open: hourLabel(lang, s.opensAt), close: hourLabel(lang, s.closesAt) })}`} />
+        <Row icon={<Store className="size-5" />} title={s.name} sub={`${s.address} · ${t("account.hours", { hours: hoursText(lang, s) })}`} />
         <Row icon={<Phone className="size-5" />} title={t("footer.call")} sub={s.phone} selectable />
         <Row icon={<Bike className="size-5" />} title={t("footer.delivery")} sub={t("footer.terms", { free: rupees(s.freeDeliveryAt), min: rupees(s.minOrder) })} />
         <div className="flex gap-3 p-4">

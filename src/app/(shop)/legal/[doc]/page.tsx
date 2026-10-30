@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { hoursText } from "@/lib/i18n";
 import { rupees } from "@/lib/money";
 import type { StoreSettings } from "@/lib/settings";
 import { getSettings } from "@/server/catalog";
@@ -118,7 +119,7 @@ const DOCS: Record<string, Doc> = {
         </p>
         <h2>Slots</h2>
         <p>
-          Choose a two-hour slot at checkout between {s.opensAt}:00 and {s.closesAt}:00. Slots close {s.slotCutoffMinutes} minutes before they start.
+          Choose a two-hour slot at checkout during opening hours ({hoursText("en", s)}). Slots close {s.slotCutoffMinutes} minutes before they start.
           If we're running late we'll call you.
         </p>
         <h2>Charges</h2>
