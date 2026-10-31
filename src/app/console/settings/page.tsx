@@ -3,7 +3,7 @@ import { ne } from "drizzle-orm";
 import { Suspense } from "react";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import { displayPhone, requireStaff } from "@/server/auth";
-import { getSettings } from "@/server/catalog";
+import { readSettings } from "@/server/catalog";
 import { getDb, schema } from "@/server/db";
 import { gatewayEnabled } from "@/server/razorpay";
 import { SettingsForm } from "./settings-form";
@@ -22,7 +22,7 @@ async function Settings() {
   const me = await requireStaff("/console/settings", ["owner"]);
   const db = await getDb();
   const [settings, staff, gatewayReady] = await Promise.all([
-    getSettings(),
+    readSettings(),
     db.select().from(schema.users).where(ne(schema.users.role, "customer")).orderBy(schema.users.createdAt),
     gatewayEnabled({ ignoreSetting: true }),
   ]);

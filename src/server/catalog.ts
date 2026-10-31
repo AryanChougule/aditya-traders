@@ -43,6 +43,14 @@ export async function getSettings(): Promise<StoreSettings> {
   "use cache";
   cacheTag(TAGS.settings);
   cacheLife("hours");
+  return readSettings();
+}
+
+/**
+ * The saved settings straight from the database, for the form that edits them. A cached copy there can be hours
+ * old, and saving it would quietly write the old values back over newer ones.
+ */
+export async function readSettings(): Promise<StoreSettings> {
   const db = await getDb();
   const [row] = await db.select().from(schema.settings).where(eq(schema.settings.id, 1));
   const parsed = settingsSchema.safeParse({ ...DEFAULT_SETTINGS, ...(row?.data as object) });

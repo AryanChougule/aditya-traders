@@ -46,3 +46,8 @@ next-env.d.ts
 # embedded development database
 /.data
 .neon
+
+# rendered ad videos and screenshots (sources in marketing/ads are kept)
+/marketing/out
+/marketing/shots
+/marketing/node_modules
