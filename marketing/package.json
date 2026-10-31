@@ -1,0 +1,9 @@
+{
+  "name": "aditya-traders-marketing",
+  "private": true,
+  "type": "module",
+  "description": "Ad videos and posters for Aditya Traders, rendered from HTML with Chrome + ffmpeg",
+  "devDependencies": {
+    "puppeteer-core": "^25.16.0"
+  }
+}

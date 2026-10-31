@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="mr">
+<head>
+<meta charset="utf-8">
+<title>Aditya Traders Diwali ad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Mukta:wght@500;700;800&family=Yatra+One&display=block">
+<style>
+/*
+ * One Diwali story, three cuts: ?f=reel (30 s, 9:16), ?f=story (15 s, 9:16), ?f=feed (15 s, 4:5).
+ * Everything is drawn from a single clock: window.seek(t) paints the exact frame for time t, so the
+ * renderer can step through it frame by frame. Text sits inside Meta's safe zone (clear of the top
+ * bar and the bottom buttons), because most people watch with the sound off.
+ */
+:root {
+  --night: #120d33; --night2: #2a1347; --kumkum: #8f1d2c; --marigold: #f6a609; --gold: #ffd76a;
+  --cream: #fff6e5; --leaf: #2f8f3a; --haze: #f2c48d; --ink: #2b1810;
+  --W: 1080px; --H: 1920px;
+  --deva: "Mukta", "Noto Sans Devanagari", sans-serif; --fest: "Yatra One", "Mukta", serif; --hand: "Kalam", "Mukta", cursive;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: var(--W); height: var(--H); overflow: hidden; background: #000; }
+#stage { position: relative; width: var(--W); height: var(--H); overflow: hidden; font-family: var(--deva); color: var(--cream); }
+.layer { position: absolute; inset: 0; opacity: 0; }
+.abs { position: absolute; }
+.t { will-change: transform, opacity; transform-origin: 50% 50%; }
+
+/* captions: big, high-contrast, inside the safe zone */
+.cap { position: absolute; left: 70px; right: 70px; top: calc(var(--H) * .16); text-align: center; display: grid; gap: 18px; justify-items: center; }
+.feed .cap { top: calc(var(--H) * .09); }
+.kicker { font-family: var(--fest); font-size: 92px; line-height: 1.15; color: var(--gold); text-shadow: 0 6px 30px rgb(0 0 0 / .45); }
+.line { font-weight: 800; font-size: 64px; line-height: 1.25; text-shadow: 0 4px 24px rgb(0 0 0 / .55); text-wrap: balance; }
+.feed .kicker { font-size: 80px; } .feed .line { font-size: 56px; }
+.pill { display: inline-flex; align-items: center; gap: 14px; padding: 16px 30px; border-radius: 999px; background: rgb(0 0 0 / .42); font-weight: 700; font-size: 44px; backdrop-filter: blur(4px); }
+.pill.hot { background: #fff; color: var(--kumkum); }
+
+/* brand bug, top */
+#bug { position: absolute; left: 50%; top: calc(var(--H) * .105); transform: translateX(-50%); display: flex; align-items: center; gap: 14px; padding: 12px 26px 12px 14px; border-radius: 999px; background: rgb(0 0 0 / .35); font-weight: 700; font-size: 34px; white-space: nowrap; z-index: 50; }
+.feed #bug { top: 24px; font-size: 30px; }
+.logo { width: 56px; height: 56px; border-radius: 16px; background: #10b981; display: grid; place-items: center; }
+
+/* backgrounds */
+.sky { background: radial-gradient(ellipse 90% 40% at 50% 104%, rgb(255 138 61 / .55), transparent 70%), linear-gradient(180deg, var(--night) 0%, var(--night2) 55%, var(--kumkum) 100%); }
+.kitchen { background: linear-gradient(180deg, #5b1f1a 0%, #7a2b1f 45%, #3a140f 100%); }
+.market { background: radial-gradient(circle at 80% 12%, #fff3c4 0, #ffd27a 8%, transparent 26%), linear-gradient(180deg, #f6c27a 0%, #eaa45d 55%, #b9733f 100%); }
+.star { position: absolute; border-radius: 50%; background: #fff8e1; box-shadow: 0 0 6px 2px rgb(255 248 225 / .6); }
+
+/* the hand-written list */
+#list { left: 50%; top: calc(var(--H) * .40); width: 640px; margin-left: -320px; padding: 46px 52px 54px; background: #fffaf0; color: #3b2a1a; border-radius: 10px; box-shadow: 0 30px 60px rgb(0 0 0 / .45); font-family: var(--hand); transform-origin: 50% 0; }
+.feed #list { top: calc(var(--H) * .33); width: 600px; margin-left: -300px; padding: 34px 44px 40px; }
+#list h3 { font-size: 58px; font-weight: 700; color: var(--kumkum); margin-bottom: 14px; border-bottom: 3px solid #e7c9a0; padding-bottom: 8px; }
+#list li { list-style: none; font-size: 48px; line-height: 1.5; display: flex; justify-content: space-between; border-bottom: 2px dashed #ecd9bd; }
+.feed #list li { font-size: 42px; }
+#list li span:last-child { color: #8a5a2b; }
+
+/* the phone */
+#phone { left: 50%; top: calc(var(--H) * .36); width: calc(var(--H) * .27); height: calc(var(--H) * .55); margin-left: calc(var(--H) * -.135); border-radius: 64px; background: #0b0b10; padding: 22px; box-shadow: 0 40px 90px rgb(0 0 0 / .6), inset 0 0 0 3px #2a2a35; }
+.feed #phone { top: calc(var(--H) * .27); height: calc(var(--H) * .68); width: calc(var(--H) * .33); margin-left: calc(var(--H) * -.165); }
+#screen { position: relative; width: 100%; height: 100%; border-radius: 44px; overflow: hidden; background: #111; }
+#screen img { position: absolute; left: 0; top: 0; width: 100%; }
+#notch { position: absolute; left: 50%; top: 14px; width: 34%; height: 34px; margin-left: -17%; border-radius: 20px; background: #0b0b10; z-index: 3; }
+#tap { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 8px solid #fff; margin: -60px 0 0 -60px; z-index: 4; }
+#toast { position: absolute; left: 6%; right: 6%; bottom: 5%; padding: 26px 24px; border-radius: 26px; background: #10b981; color: #04241a; font-weight: 800; font-size: 40px; text-align: center; z-index: 4; box-shadow: 0 12px 30px rgb(0 0 0 / .4); }
+
+/* end card */
+.endname { font-family: var(--fest); font-size: 132px; line-height: 1.05; background: linear-gradient(100deg, var(--marigold), var(--cream) 45%, var(--gold) 60%, var(--marigold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.feed .endname { font-size: 112px; }
+.chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+.chip { padding: 14px 26px; border-radius: 999px; background: rgb(255 255 255 / .12); border: 2px solid rgb(255 215 106 / .5); font-weight: 700; font-size: 38px; }
+.url { font-weight: 800; font-size: 64px; letter-spacing: .5px; color: #04241a; background: var(--gold); padding: 16px 40px; border-radius: 24px; box-shadow: 0 12px 40px rgb(246 166 9 / .45); }
+.feed .url { font-size: 56px; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- ===== 1. Aai's faral list (kitchen, evening) ===== -->
+  <section class="layer" id="s1">
+    <div class="abs kitchen" style="inset:0"></div>
+    <!-- window with an akash kandil glowing outside -->
+    <svg class="abs" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice" style="inset:0;width:100%;height:100%">
+      <defs>
+        <radialGradient id="k1g"><stop offset="0" stop-color="#ffcf5a" stop-opacity=".8"/><stop offset="1" stop-color="#ff9a3c" stop-opacity="0"/></radialGradient>
+        <linearGradient id="win" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1150"/><stop offset="1" stop-color="#4a1840"/></linearGradient>
+      </defs>
+      <g transform="translate(0 0)" id="s1win">
+      <rect x="760" y="1010" width="280" height="360" rx="14" fill="url(#win)" stroke="#c99b5a" stroke-width="12"/>
+      <line x1="900" y1="1010" x2="900" y2="1370" stroke="#c99b5a" stroke-width="9"/>
+      <circle id="s1kglow" cx="900" cy="1160" r="130" fill="url(#k1g)"/>
+      <polygon points="900,1102 914,1142 956,1142 922,1166 934,1206 900,1182 866,1206 878,1166 844,1142 886,1142" fill="#ff7a3c" stroke="#fff3c4" stroke-width="3"/>
+      </g>
+      <!-- shelf with steel dabbas -->
+      <rect x="20" y="1300" width="300" height="14" fill="#3a1d10"/>
+      <g fill="#c9ccd3" stroke="#8e939c" stroke-width="3"><rect x="34" y="1214" width="70" height="86" rx="10"/><rect x="118" y="1190" width="80" height="110" rx="10"/><rect x="212" y="1224" width="70" height="76" rx="10"/></g>
+      <!-- counter, stove and kadhai -->
+      <rect x="0" y="1500" width="1080" height="420" fill="#2a120c"/>
+      <rect x="0" y="1480" width="1080" height="34" fill="#6b3a24"/>
+      <rect x="610" y="1420" width="360" height="70" rx="12" fill="#1c1c22"/>
+      <path d="M600 1380 Q790 1520 980 1380 Z" fill="#2c2c33" stroke="#555" stroke-width="6"/>
+      <g id="s1steam" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="10" stroke-linecap="round">
+        <path d="M740 1360 q-30 -60 0 -120 q30 -60 0 -120"/><path d="M800 1350 q-30 -60 0 -120 q30 -60 0 -120"/><path d="M860 1360 q-30 -60 0 -120 q30 -60 0 -120"/>
+      </g>
+    </svg>
+    <div class="cap">
+      <div class="kicker t" id="s1k">दिवाळी आली…</div>
+      <div class="line t" id="s1l">आईची फराळाची यादी तयार!</div>
+    </div>
+    <div class="abs t" id="list">
+      <h3>फराळाची यादी</h3>
+      <ul>
+        <li class="t"><span>बेसन</span><span>1 kg</span></li>
+        <li class="t"><span>साजूक तूप</span><span>1 kg</span></li>
+        <li class="t"><span>साखर</span><span>2 kg</span></li>
+        <li class="t"><span>जाड पोहे</span><span>1 kg</span></li>
+        <li class="t"><span>तेल</span><span>5 L</span></li>
+        <li class="t"><span>शेंगदाणे, रवा, मैदा…</span><span></span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== 2. The market run (the problem) ===== -->
+  <section class="layer" id="s2">
+    <div class="abs market" style="inset:0"></div>
+    <svg class="abs" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice" style="inset:0;width:100%;height:100%">
+      <!-- stall awnings -->
+      <g id="awn">
+        <path d="M-20 700 h380 v60 l-38 40 l-38 -40 l-38 40 l-38 -40 l-38 40 l-38 -40 l-38 40 l-38 -40 l-38 40 l-38 -40 Z" fill="#c2410c"/>
+        <path d="M360 680 h380 v60 l-38 40 l-38 -40 l-38 40 l-38 -40 l-38 40 l-38 -40 l-38 40 l-38 -40 l-38 40 l-38 -40 Z" fill="#1d4ed8"/>
+        <path d="M740 700 h380 v60 l-38 40 l-38 -40 l-38 40 l-38 -40 l-38 40 l-38 -40 l-38 40 l-38 -40 l-38 40 l-38 -40 Z" fill="#15803d"/>
+      </g>
+      <rect x="0" y="780" width="1080" height="420" fill="#7c4a2a" opacity=".55"/>
+      <!-- crowd: a few rows of people, nudging each other -->
+      <g id="crowd"></g>
+      <rect x="0" y="1560" width="1080" height="360" fill="#5a3520"/>
+    </svg>
+    <!-- clock -->
+    <svg class="abs t" id="clock" viewBox="-100 -100 200 200" style="left:50%;top:calc(var(--H)*.47);width:300px;height:300px;margin-left:-150px">
+      <circle r="92" fill="#fff" stroke="#2b1810" stroke-width="10"/>
+      <g stroke="#2b1810" stroke-width="6" stroke-linecap="round">
+        <line y1="-78" y2="-66"/><line y1="78" y2="66"/><line x1="-78" x2="-66"/><line x1="78" x2="66"/>
+      </g>
+      <line id="hh" y2="-42" stroke="#2b1810" stroke-width="10" stroke-linecap="round"/>
+      <line id="mh" y2="-68" stroke="#c2410c" stroke-width="7" stroke-linecap="round"/>
+      <circle r="8" fill="#2b1810"/>
+    </svg>
+    <div class="cap">
+      <div class="line t" id="s2a">पण सामान आणायला बाजारात गेलं की…</div>
+      <div class="pill t" id="s2b">उन्हात गर्दी आणि रांगा</div>
+      <div class="pill t" id="s2c">जड पिशव्या घेऊन घरी</div>
+      <div class="pill hot t" id="s2d">2 तास गेले, फराळ तसाच!</div>
+    </div>
+  </section>
+
+  <!-- ===== 3. This year, Aai orders on her phone ===== -->
+  <section class="layer" id="s3">
+    <div class="abs sky" style="inset:0"></div>
+    <div class="abs" id="s3stars" style="inset:0"></div>
+    <div class="cap">
+      <div class="kicker t" id="s3k">यंदा आईने फोन उचलला</div>
+      <div class="line t" id="s3l">आणि आदित्य ट्रेडर्सवर घरबसल्या order केलं</div>
+    </div>
+    <div class="abs t" id="phone">
+      <div id="screen">
+        <div id="notch"></div>
+        <img id="shot" src="../shots/landing.jpg" alt="">
+        <div class="t" id="tap"></div>
+        <div class="t" id="toast">✓ तुमचा order confirm झाला!</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 4. Weighed, packed, delivered in her slot ===== -->
+  <section class="layer" id="s4">
+    <div class="abs sky" style="inset:0"></div>
+    <svg class="abs" viewBox="0 0 1080 1920" preserveAspectRatio="xMidYMid slice" style="inset:0;width:100%;height:100%">
+      <defs><radialGradient id="dg"><stop offset="0" stop-color="#ffcf5a" stop-opacity=".9"/><stop offset="1" stop-color="#ff9a3c" stop-opacity="0"/></radialGradient></defs>
+      <!-- road -->
+      <rect x="0" y="1460" width="1080" height="460" fill="#241a3d"/>
+      <g fill="#fff" opacity=".35"><rect x="40" y="1560" width="120" height="12"/><rect x="260" y="1560" width="120" height="12"/><rect x="480" y="1560" width="120" height="12"/><rect x="700" y="1560" width="120" height="12"/><rect x="920" y="1560" width="120" height="12"/></g>
+      <!-- the house: door with toran, rangoli and a kandil -->
+      <g transform="translate(640 860)">
+        <rect x="0" y="0" width="420" height="600" fill="#e8d3b0"/>
+        <path d="M-30 0 L210 -170 L450 0 Z" fill="#9a3412"/>
+        <rect x="120" y="230" width="180" height="370" rx="8" fill="#6b3a1f"/>
+        <circle cx="270" cy="420" r="9" fill="#f6a609"/>
+        <path d="M110 230 q100 50 200 0" fill="none" stroke="#f97316" stroke-width="12" stroke-dasharray="2 14" stroke-linecap="round"/>
+        <g fill="#2f8f3a"><path d="M150 236 l10 34 l10 -34z"/><path d="M200 248 l10 34 l10 -34z"/><path d="M250 248 l10 34 l10 -34z"/></g>
+        <polygon points="60,150 72,186 110,186 79,208 91,244 60,222 29,244 41,208 10,186 48,186" fill="#ff7a3c" stroke="#fff3c4" stroke-width="3"/>
+        <circle cx="60" cy="196" r="70" fill="url(#dg)" id="s4glow"/>
+        <ellipse cx="210" cy="640" rx="170" ry="34" fill="none" stroke="#ff5d8f" stroke-width="10"/>
+        <ellipse cx="210" cy="640" rx="110" ry="20" fill="none" stroke="#ffd23f" stroke-width="8"/>
+      </g>
+      <!-- diyas on the step -->
+      <g id="s4diyas">
+        <g transform="translate(700 1440)"><path d="M0 0 q30 30 60 0 z" fill="#b4532a"/><path class="fl" d="M30 -38 q14 20 0 30 q-14 -10 0 -30z" fill="#ffd23f"/></g>
+        <g transform="translate(960 1440)"><path d="M0 0 q30 30 60 0 z" fill="#b4532a"/><path class="fl" d="M30 -38 q14 20 0 30 q-14 -10 0 -30z" fill="#ffd23f"/></g>
+      </g>
+      <!-- the scooter with the shop's delivery box -->
+      <g id="scooter">
+        <circle cx="70" cy="150" r="46" fill="#1b1b22" stroke="#8a8a96" stroke-width="10"/>
+        <circle cx="300" cy="150" r="46" fill="#1b1b22" stroke="#8a8a96" stroke-width="10"/>
+        <path d="M40 120 Q60 40 150 50 L250 50 Q330 50 340 120 Z" fill="#10b981"/>
+        <path d="M250 50 L290 -40" stroke="#444" stroke-width="12" stroke-linecap="round"/>
+        <rect x="-20" y="-40" width="150" height="120" rx="12" fill="#f6a609"/>
+        <text x="55" y="22" text-anchor="middle" font-family="Mukta" font-weight="800" font-size="30" fill="#4a1d0a">आदित्य</text>
+        <text x="55" y="56" text-anchor="middle" font-family="Mukta" font-weight="800" font-size="26" fill="#4a1d0a">ट्रेडर्स</text>
+        <!-- rider -->
+        <path d="M170 50 L200 -70 L250 -70 L240 50 Z" fill="#334155"/>
+        <circle cx="222" cy="-110" r="40" fill="#e11d48"/>
+        <rect x="190" y="-108" width="64" height="22" rx="10" fill="#111827" opacity=".8"/>
+      </g>
+    </svg>
+    <!-- scale weighing a bag -->
+    <svg class="abs t" id="scale" viewBox="0 0 300 260" style="left:60px;top:calc(var(--H)*.42);width:470px">
+      <rect x="30" y="180" width="240" height="60" rx="14" fill="#e5e7eb" stroke="#64748b" stroke-width="6"/>
+      <rect x="70" y="196" width="160" height="30" rx="6" fill="#0f172a"/>
+      <text id="kg" x="150" y="220" text-anchor="middle" font-family="Mukta" font-weight="800" font-size="28" fill="#4ade80">0.000 kg</text>
+      <path d="M90 180 L110 80 L190 80 L210 180 Z" fill="#fef3c7" stroke="#d97706" stroke-width="6"/>
+      <text x="150" y="140" text-anchor="middle" font-family="Mukta" font-weight="800" font-size="30" fill="#92400e">बेसन</text>
+    </svg>
+    <div class="cap">
+      <div class="line t" id="s4a">दुकानात ताजं वजन करून pack…</div>
+      <div class="line t" id="s4b">…आणि सांगितलेल्या वेळेत घरपोच</div>
+      <div class="pill t" id="s4c">संध्याकाळी 5 – 7 चा slot</div>
+    </div>
+  </section>
+
+  <!-- ===== 5. Faral ready on time ===== -->
+  <section class="layer" id="s5">
+    <div class="abs kitchen" style="inset:0"></div>
+    <svg class="abs t" id="thali" viewBox="-200 -200 400 400" style="left:50%;top:calc(var(--H)*.42);width:620px;height:620px;margin-left:-310px">
+      <circle r="190" fill="#c8961e"/><circle r="172" fill="#e9bd44"/><circle r="140" fill="#f4d36b"/>
+      <g id="faral">
+        <!-- besan ladoos -->
+        <g><circle cx="-62" cy="-62" r="36" fill="#f0a530"/><circle cx="-10" cy="-88" r="36" fill="#eda02b"/><circle cx="-24" cy="-30" r="36" fill="#f3ad3c"/></g>
+        <!-- karanjis -->
+        <path d="M30 -40 a52 52 0 0 1 100 0 z" fill="#f1d29a" stroke="#cf9a4c" stroke-width="5" transform="rotate(20 80 -40)"/>
+        <path d="M40 20 a46 46 0 0 1 90 0 z" fill="#f1d29a" stroke="#cf9a4c" stroke-width="5" transform="rotate(-10 85 20)"/>
+        <!-- chakli -->
+        <g fill="none" stroke="#9a4f1c" stroke-width="11" stroke-linecap="round"><path d="M-58 70 a8 8 0 1 1 16 0 a16 16 0 1 1 -32 0 a24 24 0 1 1 48 0 a32 32 0 1 1 -64 0 a40 40 0 1 1 80 0"/></g>
+        <!-- shankarpali -->
+        <g fill="#ecc685" stroke="#c08a43" stroke-width="2"><rect x="30" y="70" width="22" height="22" transform="rotate(45 41 81)"/><rect x="62" y="80" width="22" height="22" transform="rotate(45 73 91)"/><rect x="44" y="104" width="22" height="22" transform="rotate(45 55 115)"/><rect x="80" y="112" width="22" height="22" transform="rotate(45 91 123)"/></g>
+      </g>
+    </svg>
+    <div class="cap">
+      <div class="kicker t" id="s5k">आईचा वेळ वाचला</div>
+      <div class="line t" id="s5l">आणि फराळ वेळेत तयार!</div>
+    </div>
+    <svg class="abs s5d" viewBox="0 0 1080 200" style="left:0;bottom:calc(var(--H)*.16);width:100%"></svg>
+  </section>
+
+  <!-- ===== 6. End card ===== -->
+  <section class="layer" id="s6">
+    <div class="abs sky" style="inset:0"></div>
+    <div class="abs" id="s6stars" style="inset:0"></div>
+    <div class="cap" style="gap:26px">
+      <div class="logo t" id="e0" style="width:120px;height:120px;border-radius:32px">
+        <svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="#04241a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h16l-1.5 9a2 2 0 0 1-2 1.7H7.5a2 2 0 0 1-2-1.7Z"/><path d="M9 10l3-6 3 6"/><path d="M9 14v3M12 14v3M15 14v3"/></svg>
+      </div>
+      <div class="endname t" id="e1">आदित्य ट्रेडर्स</div>
+      <div class="line t" id="e2" style="font-size:46px;font-weight:700">Near Jain Temple, Main Road, कसबे डिग्रज</div>
+      <div class="line t" id="e3" style="color:var(--gold)">दिवाळीचं सामान, घरपोच</div>
+      <div class="chips t" id="e4">
+        <span class="chip">₹300 वर free delivery</span>
+        <span class="chip">Cash / UPI on delivery</span>
+        <span class="chip">Google ने login, password नको</span>
+      </div>
+      <div class="url t" id="e5">adityatraders.store</div>
+      <div class="kicker t" id="e6" style="font-size:84px">शुभ दीपावली!</div>
+    </div>
+    <svg class="abs" id="s6diyas" viewBox="0 0 1080 200" style="left:0;bottom:calc(var(--H)*.04);width:100%"></svg>
+  </section>
+
+  <div id="bug" class="t"><span class="logo"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#04241a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h16l-1.5 9a2 2 0 0 1-2 1.7H7.5a2 2 0 0 1-2-1.7Z"/><path d="M9 10l3-6 3 6"/></svg></span>आदित्य ट्रेडर्स · कसबे डिग्रज</div>
+</div>
+
+<script>
+const FORMATS = {
+  // scene windows in seconds: [start, end]; a scene with start === end is skipped in that cut
+  reel: { W: 1080, H: 1920, dur: 30, s1: [0, 5.5], s2: [5.5, 11.5], s3: [11.5, 18.5], s4: [18.5, 24], s5: [24, 26.6], s6: [26.6, 30] },
+  story: { W: 1080, H: 1920, dur: 15, s1: [0, 3], s2: [3, 6.2], s3: [6.2, 9.8], s4: [9.8, 12.3], s5: [12.3, 12.3], s6: [12.3, 15] },
+  feed: { W: 1080, H: 1350, dur: 15, s1: [0, 3], s2: [3, 6.2], s3: [6.2, 9.8], s4: [9.8, 12.3], s5: [12.3, 12.3], s6: [12.3, 15] },
+};
+const fmt = new URLSearchParams(location.search).get("f") || "reel";
+const F = FORMATS[fmt];
+document.documentElement.style.setProperty("--W", F.W + "px");
+document.documentElement.style.setProperty("--H", F.H + "px");
+document.body.classList.toggle("feed", fmt === "feed");
+document.getElementById("stage").classList.toggle("feed", fmt === "feed");
+
+const $ = (id) => document.getElementById(id);
+const P = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
+const eo = (p) => 1 - Math.pow(1 - p, 3);
+const eb = (p) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+function set(el, o, x = 0, y = 0, s = 1, r = 0) {
+  el.style.opacity = o;
+  el.style.transform = `translate(${x}px, ${y}px) scale(${s}) rotate(${r}deg)`;
+}
+/** fades and lifts an element in over local progress a → b */
+function rise(el, lp, a, b, dy = 50) { const p = eo(P(lp, a, b)); set(el, p, 0, (1 - p) * dy); }
+function popIn(el, lp, a, b) { const p = P(lp, a, b); set(el, Math.min(1, p * 2), 0, 0, 0.6 + 0.4 * eb(p)); }
+/** scene opacity with a short cross-fade at both ends */
+function vis(t, [a, b], fade = 0.35) {
+  if (b <= a) return 0;
+  const end = b >= F.dur - 0.01 ? 1 : 1 - P(t, b - fade, b);
+  return Math.min(a <= 0 ? 1 : P(t, a - fade, a + fade * 0.2), end);
+}
+
+// deterministic decoration so every render is identical
+function rng(seed) { return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
+for (const id of ["s3stars", "s6stars"]) {
+  const r = rng(id.length * 31 + 7), box = $(id);
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement("span");
+    s.className = "star";
+    const z = 2 + r() * 4;
+    Object.assign(s.style, { left: r() * 100 + "%", top: r() * 55 + "%", width: z + "px", height: z + "px" });
+    s.dataset.ph = r() * 6.28;
+    box.appendChild(s);
+  }
+}
+const crowd = $("crowd"), cr = rng(5);
+const skin = ["#8d5524", "#c68642", "#a0663a", "#7a4a2a"], cloth = ["#be123c", "#1d4ed8", "#a16207", "#15803d", "#7c3aed", "#0f766e", "#c2410c"];
+for (let row = 0; row < 3; row++)
+  for (let i = 0; i < 9; i++) {
+    const x = i * 130 + (row % 2) * 65 - 20 + cr() * 30, y = 1060 + row * 150;
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.setAttribute("transform", `translate(${x} ${y})`);
+    g.innerHTML = `<g class="p" data-ph="${cr() * 6.28}"><path d="M-46 160 Q-46 40 0 40 Q46 40 46 160 Z" fill="${cloth[(i + row) % cloth.length]}"/><circle cy="0" r="38" fill="${skin[(i * 3 + row) % skin.length]}"/><path d="M-38 -6 Q0 -60 38 -6 Q20 -26 0 -26 Q-20 -26 -38 -6Z" fill="#1f1300"/></g>`;
+    crowd.appendChild(g);
+  }
+for (const diyaRow of [$("s6diyas"), document.querySelector(".s5d")])
+for (let i = 0; i < 7; i++) {
+  const x = 90 + i * 150;
+  diyaRow.insertAdjacentHTML("beforeend", `<g transform="translate(${x} 120)"><circle class="halo" cx="0" cy="-34" r="56" fill="#ffb347" opacity=".25"/><path d="M-50 0 Q0 60 50 0 Z" fill="#b4532a"/><ellipse cx="0" cy="0" rx="50" ry="10" fill="#6b2410"/><path class="fl" data-i="${i}" d="M0 -58 C12 -36 12 -20 0 -8 C-12 -20 -12 -36 0 -58Z" fill="#ffd23f"/></g>`);
+}
+
+const listItems = [...document.querySelectorAll("#list li")];
+let shotH = 0;
+
+window.seek = function (t) {
+  const W = F.W, H = F.H;
+  for (const k of ["s1", "s2", "s3", "s4", "s5", "s6"]) $(k).style.opacity = vis(t, F[k]);
+  const L = (k) => P(t, F[k][0], F[k][1]); // local progress of a scene
+
+  // brand bug: on from the start, gone for the end card
+  set($("bug"), Math.min(P(t, 0.2, 0.8), 1 - P(t, F.s6[0] - 0.3, F.s6[0])));
+
+  // 1. kitchen and the list
+  let lp = L("s1");
+  rise($("s1k"), lp, 0.02, 0.2);
+  rise($("s1l"), lp, 0.16, 0.34);
+  const lp1 = eo(P(lp, 0.22, 0.42));
+  set($("list"), lp1, 0, (1 - lp1) * 160, 1, -3 + (1 - lp1) * -6);
+  listItems.forEach((li, i) => rise(li, lp, 0.36 + i * 0.08, 0.46 + i * 0.08, 20));
+  $("s1steam").setAttribute("transform", `translate(0 ${-((t * 40) % 60)})`);
+  $("s1steam").setAttribute("opacity", 0.5 + 0.3 * Math.sin(t * 3));
+  $("s1kglow").setAttribute("opacity", 0.75 + 0.25 * Math.sin(t * 4));
+
+  // 2. the market: crowd jostles, clock spins, problems pile up
+  lp = L("s2");
+  rise($("s2a"), lp, 0.02, 0.16);
+  popIn($("s2b"), lp, 0.18, 0.3);
+  popIn($("s2c"), lp, 0.34, 0.46);
+  popIn($("s2d"), lp, 0.62, 0.74);
+  document.querySelectorAll("#crowd .p").forEach((p) => {
+    const ph = +p.dataset.ph;
+    p.setAttribute("transform", `translate(${Math.sin(t * 5 + ph) * 8} ${Math.abs(Math.sin(t * 7 + ph)) * -10})`);
+  });
+  const cp = eo(P(lp, 0.08, 0.2));
+  set($("clock"), cp, 0, (1 - cp) * 60, 0.7 + 0.3 * cp);
+  const spin = eo(P(lp, 0.2, 0.66)) * 720 * 2; // two hours pass
+  $("mh").setAttribute("transform", `rotate(${spin})`);
+  $("hh").setAttribute("transform", `rotate(${60 + spin / 12})`);
+
+  // 3. the phone: the real site, scrolling to the faral section, a tap, a confirmation
+  lp = L("s3");
+  rise($("s3k"), lp, 0.02, 0.16);
+  rise($("s3l"), lp, 0.12, 0.26);
+  const ph = eo(P(lp, 0.08, 0.3));
+  set($("phone"), ph, 0, (1 - ph) * 300, 0.92 + 0.08 * ph);
+  const img = $("shot"), scr = $("screen");
+  if (img.naturalWidth) {
+    const k = scr.clientWidth / img.naturalWidth;
+    // scroll from the Diwali banner down to the faral plates (about a quarter of the way down the page)
+    const target = img.naturalHeight * 0.205 * k;
+    img.style.transform = `translateY(${-eo(P(lp, 0.34, 0.6)) * target}px)`;
+    const tp = P(lp, 0.64, 0.74);
+    $("tap").style.left = "38%";
+    $("tap").style.top = img.naturalHeight * 0.2685 * k - eo(P(lp, 0.34, 0.6)) * target + "px";
+    set($("tap"), tp > 0 && tp < 1 ? 1 - tp : 0, 0, 0, 0.4 + tp * 0.9);
+  }
+  popIn($("toast"), lp, 0.76, 0.86);
+
+  // 4. weighing, then the scooter rides to the door
+  lp = L("s4");
+  rise($("s4a"), lp, 0.02, 0.14);
+  rise($("s4b"), lp, 0.4, 0.52);
+  popIn($("s4c"), lp, 0.56, 0.66);
+  const sp = eo(P(lp, 0.06, 0.18));
+  set($("scale"), sp * (1 - P(lp, 0.4, 0.48)), 0, (1 - sp) * 40);
+  $("kg").textContent = (1.0 * eo(P(lp, 0.14, 0.34))).toFixed(3) + " kg";
+  const ride = eo(P(lp, 0.38, 0.86));
+  const bob = Math.sin(t * 18) * 4;
+  $("scooter").setAttribute("transform", `translate(${-420 + ride * 760} ${1300 + bob})`);
+  $("s4glow").setAttribute("opacity", 0.7 + 0.3 * Math.sin(t * 4));
+  document.querySelectorAll("#s4diyas .fl").forEach((f, i) => f.setAttribute("transform", `scale(1 ${1 + 0.08 * Math.sin(t * 9 + i)})`));
+
+  // 5. faral on the thali
+  lp = L("s5");
+  rise($("s5k"), lp, 0.04, 0.24);
+  rise($("s5l"), lp, 0.2, 0.4);
+  const tl = eo(P(lp, 0.08, 0.36));
+  set($("thali"), tl, 0, (1 - tl) * 80, 0.85 + 0.15 * tl, (1 - tl) * -20);
+  document.querySelectorAll(".s5d .fl").forEach((f) => { const i = +f.dataset.i; f.setAttribute("transform", `scale(1 ${1 + 0.08 * Math.sin(t * 9 + i)})`); });
+
+  // 6. end card
+  lp = L("s6");
+  popIn($("e0"), lp, 0.02, 0.14);
+  rise($("e1"), lp, 0.08, 0.22);
+  rise($("e2"), lp, 0.16, 0.28);
+  rise($("e3"), lp, 0.22, 0.34);
+  rise($("e4"), lp, 0.3, 0.44);
+  popIn($("e5"), lp, 0.4, 0.54);
+  rise($("e6"), lp, 0.5, 0.64);
+  $("e1").style.backgroundPosition = `${(t * 40) % 200}% 0`;
+  document.querySelectorAll("#s6diyas .fl").forEach((f) => {
+    const i = +f.dataset.i, on = eo(P(lp, 0.05 + i * 0.05, 0.12 + i * 0.05));
+    f.setAttribute("transform", `scale(${on} ${on * (1 + 0.08 * Math.sin(t * 9 + i))})`);
+  });
+  document.querySelectorAll("#s6diyas .halo").forEach((h, i) => h.setAttribute("opacity", 0.25 * eo(P(lp, 0.05 + i * 0.05, 0.2 + i * 0.05))));
+
+  // stars twinkle everywhere
+  document.querySelectorAll(".star").forEach((s) => (s.style.opacity = 0.35 + 0.65 * Math.abs(Math.sin(t * 1.5 + +s.dataset.ph))));
+};
+
+window.adReady = Promise.all([document.fonts.ready, new Promise((r) => ($("shot").complete ? r() : ($("shot").onload = r)))]).then(() => {
+  shotH = $("shot").naturalHeight;
+  window.seek(0);
+  return { ...F, fmt };
+});
+
+// in a normal browser tab, play it on a loop
+if (!navigator.webdriver) {
+  let t0 = performance.now();
+  window.adReady.then(() => {
+    const tick = (now) => { window.seek(((now - t0) / 1000) % F.dur); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  });
+}
+</script>
+</body>
+</html>
